@@ -1,6 +1,7 @@
 # 開発方針
 
 - ドキュメントとIssueは日本語で記述する。
+- 計画書は `docs/plans/`、設計書は `docs/specs/` に置く。Issue本文はGitHubで管理し、リポジトリ内に複製しない。
 - Issue単位で作業し、現在の範囲と完了条件を確認する。
 - Issueを起票・編集するときは [.agents/skills/write-issue/SKILL.md](.agents/skills/write-issue/SKILL.md) を読む。タイトルに先頭の連番を付けず、本文は「背景」「実現したいこと」「完了条件」に統一する。
 - PRを準備・作成・編集するときは [.agents/skills/create-pr/SKILL.md](.agents/skills/create-pr/SKILL.md) を読む。タイトル・本文は日本語で、背景・変更内容・確認方法を記載する。

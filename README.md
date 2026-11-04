@@ -39,8 +39,7 @@ CIのGoバージョンもmise.tomlを参照します。実際のCI実行はGitHu
 [GitHub Issues](https://github.com/oddgai/fuchu-kids-event-curator/issues)を1件ずつ進めます。
 取得方法の調査、1サイトでの収集、候補の整理、HTML、PDF・PNG、情報源の追加、定期実行の順に整備します。
 
-- [設計書](docs/superpowers/specs/2026-11-04-event-curator-design.md)
-- [Issue一覧と本文](docs/issues/README.md)
+- [設計書](docs/specs/2026-11-04-event-curator-design.md)
 - [開発方針](AGENTS.md)
 
 ## Issueの書き方

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Go、mise、Go Modules、GitHub Actions。
 
-**Spec:** docs/superpowers/specs/2026-11-04-event-curator-design.md
+**Spec:** docs/specs/2026-11-04-event-curator-design.md
 
 ## Global Constraints
 
@@ -26,7 +26,7 @@
 
 ## Task 1: Issue形式を整える
 
-Files: .agents/skills/write-issue/SKILL.md、AGENTS.md、.github/ISSUE_TEMPLATE/task.md、docs/issues/README.md。
+Files: .agents/skills/write-issue/SKILL.md、AGENTS.md、.github/ISSUE_TEMPLATE/task.md。Issue本文はGitHubで管理する。
 
 - [x] 既存原稿から起票させ、指定の背景・実現したいことが欠落する基準結果を確認する。
 - [x] skill、テンプレート、参照指示を作成する。
