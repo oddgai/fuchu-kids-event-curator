@@ -1,13 +1,11 @@
 # fuchu-kids-event-curator
 
-府中市と近郊の子供向けイベントを集め、ご家庭向けの候補一覧をまとめるプロジェクトです。
-HTMLを共通の原稿として、配布用PDF・PNGを出力する予定です。
+府中市と近郊のイベントを集め、ご家庭向けの候補一覧をJSON・HTML・PDF・PNGで保存するGo製CLIです。
+年齢が明示された参加条件と、原文キーワードによる興味の補助情報を分けて表示します。条件不明の候補は要確認として残します。
 
-現在は初期セットアップ段階です。イベント収集・レポート生成はまだ実装していません。
+## 準備
 
-## 開発環境
-
-[mise](https://mise.jdx.dev/)を導入してから、リポジトリで次を実行します。
+[mise](https://mise.jdx.dev/)を導入してから実行します。Goはmise.tomlに固定され、グローバル設定の変更は不要です。
 
 ```sh
 mise trust
@@ -15,39 +13,104 @@ mise install
 mise exec -- go version
 ```
 
-Goのバージョンはmise.tomlで固定しています。Go本体はmiseのユーザー用管理ディレクトリに保存され、システムへの直接インストールやグローバル設定の変更は不要です。
-シェルへのmiseの有効化も必須ではありません。ライブラリの依存関係はGo Modulesで管理します。
-現時点では標準ライブラリのみを使用するため、go.sumはありません。
+PDF・PNGの出力と観光協会の動的ページ取得にはChromeまたはChromiumが必要です。日本語フォント（LinuxではNoto CJK等）も用意してください。
+Macではインストール済みGoogle Chromeを利用できます。Chromeを見つけられない場合は `-browser` または `CHROME_PATH` で実行ファイルを指定します。
+
+## 収集して一覧を生成する
 
 ```sh
-# CLIのヘルプ
-mise exec -- go run ./cmd/fuchu-kids-event-curator -help
+# JSON・HTMLを生成（既定値：今日から30日、月齢32ヶ月）
+mise exec -- go run ./cmd/fuchu-kids-event-curator -config config.example.json
 
-# 整形
-mise run fmt
+# PDF・分割PNGも生成
+mise exec -- go run ./cmd/fuchu-kids-event-curator -config config.example.json -export
 
-# 整形チェック・静的解析・テスト・ビルド（CIと共通）
-mise run check
+# 期間・月齢・情報源を指定
+mise exec -- go run ./cmd/fuchu-kids-event-curator \
+  -from 2026-11-05 -days 30 -age-months 32 \
+  -sources seiseki,museum,park,theater -output output/november -export
 ```
 
-現在は機能テストがまだないため、go testはパッケージのコンパイル確認になります。
-機能を追加する段階で、その振る舞いを確認するテストも追加します。
-CIのGoバージョンもmise.tomlを参照します。実際のCI実行はGitHubへpushした後に確認します。
+`config.example.json`をコピーして編集できます。住所・生年月日は不要です。月齢は自動加算しないため、成長に合わせて変更してください。
+`-config`を省略すると組み込みの既定値を使い、引数は設定ファイルより優先されます。
+全オプションは `-help` で表示します。対象期間の終了日は「開始日＋日数−1日」です。
 
-## 開発の進め方
+出力ディレクトリに次を保存します（同じディレクトリへの再実行は上書き）。
+
+| ファイル | 内容 |
+| --- | --- |
+| collected.json | 絞り込み前の取得結果・情報源ごとの状態 |
+| report.json | 対象期間・年齢で整理した候補 |
+| report.html | 外部CSSや画像なしで読める一覧 |
+| report.pdf | 印刷・共有用PDF（`-export`時） |
+| report-001.png 以降 | 既定5件ずつに分割した画像（`-export`時） |
+
+画像の件数は `-per-page` で変更できます。PDFには全候補を掲載し、出典リンクを保持します。
+別の実行でPDF・画像を再生成しない場合、以前のPDF・画像は更新されません。混同を避けるには出力先を分けてください。
+
+## 通信せずに再生成する
+
+```sh
+# 保存済みの収集結果に別の条件を適用
+mise exec -- go run ./cmd/fuchu-kids-event-curator \
+  -input output/collected.json -from 2026-11-05 -days 30 -output output/review -export
+
+# 実在しないサンプルで出力確認
+mise exec -- go run ./cmd/fuchu-kids-event-curator \
+  -input examples/events.json -from 2026-11-01 -output output/sample -export
+```
+
+## 情報源と制約
+
+| ID | 情報源 | 現在の扱い |
+| --- | --- | --- |
+| seiseki | 聖蹟桜ヶ丘 | HTTP一覧・詳細、ページ送り |
+| museum | 郷土の森博物館 | 静的なイベント案内から辿れる個別ページ。禁止されたカレンダーCGIは使わない |
+| park | 府中市の公園 | お知らせ一覧・詳細、ページ送り。年が明示されない記事は日程未確定 |
+| theater | 府中の森芸術劇場 | 静的ページで紹介される公演詳細。カレンダーCGIは使わない |
+| kankou | 府中観光協会 | Chromeで対象月の一覧と詳細を読み込む |
+| lumiere | ルミエール府中 | 公式公開APIの公開イベント記事。画像のみの条件・開催年は補完しない |
+| machidukuri | まちづくり府中 | 規約のリンク事前承諾条件を確認するまで自動出力を保留 |
+
+既定では1情報源につき一覧2ページ・詳細30件まで、同じホストのHTTP取得間隔は1秒です。
+上限に達した場合は一部取得と表示します。網羅的なイベント一覧ではありません。博物館はトップの案内から直接辿れる範囲で、カテゴリ内のすべての記事を巡回しません。
+詳細条件が画像・PDFだけにある場合は抽出しません。まちづくり府中の配布可否は後日確認事項です。
+
+開催年を掲載日やURLから補いません。期間不明の古い記事が要確認候補に残ることがあります。
+複数企画を含むページの各企画の年齢・料金をイベント全体の条件にはしません。例外を含む年齢条件や学校段階は原文確認に回します。
+単純な年齢範囲のみ自動判定します。中止記事と、雨天時のみ中止という条件は区別します。
+
+情報源の取得失敗や保留はHTML・JSONに表示します。一部が取得できれば成果物を残して終了コード0、全件失敗・全件無効なら状況付き成果物を保存して終了コード1です。
+キャッシュによる過去データの代用は行いません。収集後の変更・中止・予約状況は出発前に公式情報を確認してください。
+
+## 定期実行・ダウンロード
+
+GitHub Actionsの「イベント一覧を生成する」を使います。
+
+- 手動：Actions → 対象ワークフロー → Run workflow。掲載日数と月齢を指定可能。
+- 定期：毎月1日・15日の09:17 JST。月2回であり、14日間隔ではありません。Actionsの混雑などで遅れる場合があります。
+- 保存：実行ページのArtifactsから `fuchu-kids-events-実行番号` をダウンロード。保持期間30日。
+- 全件失敗時も、生成できた状況レポートをartifactへ保存します。
+
+定期実行はデフォルトブランチにマージ後に有効になります。公開Webサイトへの配信やメール送信は行いません。
+月齢32ヶ月・掲載30日・月2回・保存30日は仮置きで、設定とワークフローで変更できます。
+
+## 開発・検証
+
+```sh
+mise run fmt
+mise run check
+
+# Chromeを使う0件・1件・13件のPDF/PNG統合テスト
+REPORT_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
+  mise exec -- go test ./internal/report -run TestExportBrowser -v
+```
+
+通常のテストは保存HTML・疑似HTTPサーバー・オフラインJSONを使い、外部サイトへ接続しません。
+ブラウザ統合テストは `REPORT_TEST_BROWSER` 指定時に実行し、CIでも日本語フォントを用意して実行します。
+実サイトの構造が変わった場合は、情報源別のエラーと [調査書](docs/specs/source-research.md) を照合します。
 
 [GitHub Issues](https://github.com/oddgai/fuchu-kids-event-curator/issues)を1件ずつ進めます。
-取得方法の調査、1サイトでの収集、候補の整理、HTML、PDF・PNG、情報源の追加、定期実行の順に整備します。
-
-- [設計書](docs/specs/2026-11-04-event-curator-design.md)
-- [開発方針](AGENTS.md)
-
-## Issueの書き方
-
-タイトルは先頭の連番なし、本文は「背景」「実現したいこと」「完了条件」に統一します。
-完了条件は確認可能な結果をチェックボックスで記載します。
-
-リポジトリ専用の [write-issue skill](.agents/skills/write-issue/SKILL.md) とGitHubのIssueテンプレートを用意しています。
-Codexでは `$write-issue` で指定できます。既存の汎用skillsは複製せず、必要なプロジェクト固有の規約を追加します。
-
-PRは [create-pr skill](.agents/skills/create-pr/SKILL.md) に沿って、背景・変更内容・確認方法を日本語で記載します。`$create-pr` でも指定できます。
+[設計書](docs/specs/2026-11-04-event-curator-design.md)、[実装計画・仮置き判断](docs/plans/2026-11-05-event-curator.md)、[開発方針](AGENTS.md)も参照してください。
+Issue本文は背景・実現したいこと・完了条件、PR本文は背景・変更内容・確認方法に統一します。
+[write-issue](.agents/skills/write-issue/SKILL.md)・[create-pr](.agents/skills/create-pr/SKILL.md)を用意しています。
