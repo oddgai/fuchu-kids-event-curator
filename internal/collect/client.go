@@ -121,6 +121,21 @@ func Run(ctx context.Context, c *Client, o Options) ([]event.Event, []event.Sour
 			results = append(results, r)
 			continue
 		}
+
+		if s.ID == "lumiere" {
+			found, err := LumiereEvents(ctx, c, o.MaxPages, o.MaxEvents, now)
+			events = append(events, found...)
+			r.Count = len(found)
+			if err != nil {
+				r.Status = "partial"
+				if len(found) == 0 {
+					r.Status = "error"
+				}
+				r.Error = err.Error()
+			}
+			results = append(results, r)
+			continue
+		}
 		var candidates []Candidate
 		seen := map[string]bool{}
 		pages := []string{s.URL}
