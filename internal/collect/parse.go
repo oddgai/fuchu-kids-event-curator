@@ -322,6 +322,15 @@ func ParseDetail(s Source, c Candidate, b []byte, now time.Time) (event.Event, e
 			e.TimeText = v
 		}
 	}
+
+	if s.ID == "machidukuri" {
+		if displayed := clean(body.Find(".date-wrapper").First().Text()); displayed != "" {
+			e.DateText = displayed
+		}
+		if e.TimeText == "" {
+			e.TimeText = clean(body.Find(".time-wrapper").First().Text())
+		}
+	}
 	e.Venue = pick("会場", "場所", "開催場所")
 	e.AgeText = pick("対象", "対象年齢", "参加対象")
 	// Admission restrictions often appear in the fee or an ordinary paragraph.

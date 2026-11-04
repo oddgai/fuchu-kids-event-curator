@@ -186,3 +186,20 @@ func TestTheaterPreservesAdmissionBanBeforeSubsections(t *testing.T) {
 		}
 	}
 }
+
+func TestMachidukuriUsesDisplayedCalendarYear(t *testing.T) {
+	var s Source
+	for _, v := range Sources() {
+		if v.ID == "machidukuri" {
+			s = v
+		}
+	}
+	b := []byte(`<article class="mc-event"><h3>親子であそぼう</h3><p><span class="date-wrapper">2026年10月31日 – 2026年11月1日</span></p><div class="longdesc"><p>開催日時：10月31日(土)12:00～16:00、11月1日(日)10:40～17:00</p><p>会場：けやき並木通り</p></div></article>`)
+	e, err := ParseDetail(s, Candidate{Title: "親子であそぼう", URL: s.URL}, b, time.Now())
+	if err != nil || len(e.Dates) != 1 || e.Dates[0].Start != "2026-10-31" || e.Dates[0].End != "2026-11-01" {
+		t.Fatalf("event=%+v err=%v", e, err)
+	}
+	if e.Venue != "けやき並木通り" || e.TimeText == "" {
+		t.Fatalf("missing detail %+v", e)
+	}
+}
