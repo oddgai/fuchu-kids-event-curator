@@ -1,7 +1,15 @@
 {
   "age_months": 32,
   "days": 30,
-  "sources": ["seiseki", "museum", "park", "theater", "kankou", "lumiere"],
+  "sources": [
+    "seiseki",
+    "museum",
+    "park",
+    "theater",
+    "kankou",
+    "lumiere",
+    "machidukuri"
+  ],
   "max_pages": 2,
   "max_events_per_source": 30,
   "request_interval_ms": 1000,

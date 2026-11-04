@@ -34,7 +34,7 @@
 - [x] #6: report.Export(ctx context.Context, htmlPath, outDir, browserPath string, perPage int) error でPDF・分割PNGを作る。実ブラウザで0件・少数・多数を検証する。
 - [ ] #7: 子Issue #10〜#15を追加。museum/park/theater/kankouを実装・実サイト確認済み。ルミエールは公式公開APIで取得経路を追加。#15 まちづくり府中の出典リンク条件は未解決。
 - [x] #8: CLI、設定、手動/定期Actions、artifact保存、失敗判定を整える。
-- [ ] 全体チェック・実サイト収集・成果物確認・レビュー後、PRで提出する。ユーザーからのマージ依頼はないためマージしない。
+- [x] 全体チェック・実サイト収集・成果物確認・レビュー後、PR #16で提出。ユーザーからのマージ依頼はないためマージしない。
 
 ## 仮置きの判断
 
@@ -66,3 +66,5 @@
 5. 所要時間や移動手段の優先順位。現状は原文の会場だけ表示し、経路や移動時間は推測しない。
 
 - GitHub Ubuntu最新版ではAppArmorの制約でChrome sandboxが起動できずCI失敗を確認。ブラウザsandboxを無効化せず、user namespace制約の異なるUbuntu 22.04 runnerに固定して再検証する。
+
+- 最終版ではルミエールを含む6情報源から39件取得・29候補・PNG6枚を生成。既定設定にまちづくり府中のIDも含め、自動出力の保留理由をレポートへ明示する。
