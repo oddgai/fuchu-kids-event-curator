@@ -1,0 +1,24 @@
+[tools]
+go = "1.27.3"
+
+[env]
+GOTOOLCHAIN = "local"
+
+[tasks.fmt]
+description = "Goコードを整形する"
+run = "go fmt ./..."
+
+[tasks.check]
+description = "整形・静的解析・テスト・ビルドを確認する"
+run = """
+set -eu
+files=$(gofmt -l cmd)
+if [ -n "$files" ]; then
+  echo "$files"
+  echo 'mise run fmt で整形してください。'
+  exit 1
+fi
+go vet ./...
+go test ./...
+go build -o ./bin/ ./...
+"""
