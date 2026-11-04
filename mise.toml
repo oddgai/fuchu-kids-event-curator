@@ -12,7 +12,7 @@ run = "go fmt ./..."
 description = "整形・静的解析・テスト・ビルドを確認する"
 run = """
 set -eu
-files=$(gofmt -l cmd)
+files=$(gofmt -l cmd internal)
 if [ -n "$files" ]; then
   echo "$files"
   echo 'mise run fmt で整形してください。'

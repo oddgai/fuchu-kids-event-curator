@@ -11,7 +11,27 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise run check
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+      - name: PDF・PNGのブラウザ統合テスト
+        env:
+          REPORT_TEST_BROWSER: ${{ steps.chrome.outputs.chrome-path }}
+        run: mise exec -- go test ./internal/report -run TestExportBrowser -v
+      - name: 架空サンプルでCLIの出力を確認
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: >-
+          mise exec -- go run ./cmd/fuchu-kids-event-curator
+          -input examples/events.json -from 2026-11-01
+          -output output/sample -export
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sample-report
+          path: output/sample/
+          retention-days: 7
