@@ -56,3 +56,17 @@ func TestHTMLExplainsStatusesAndHighlightsUnconfirmedEvents(t *testing.T) {
 		t.Error("known event incorrectly marked unconfirmed")
 	}
 }
+
+func TestDeferredSourceDoesNotCreateClickableLink(t *testing.T) {
+	var out bytes.Buffer
+	err := WriteHTML(&out, event.Report{Sources: []event.SourceResult{{Name: "保留中の情報源", URL: "https://deferred.example.org/", Status: "disabled"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), `href="https://deferred.example.org/"`) {
+		t.Fatal("deferred source became a clickable link")
+	}
+	if !strings.Contains(out.String(), "保留中の情報源") {
+		t.Fatal("source status missing")
+	}
+}
