@@ -2,6 +2,8 @@ package report
 
 import (
 	"context"
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 	"net/url"
@@ -46,4 +48,21 @@ func TestCalendarInteractionBrowser(t *testing.T) {
 	check(`(()=>{document.getElementById('dialog-close').click();return !document.getElementById('event-dialog').open})()`)
 	check(`(()=>{document.getElementById('month-next').click();return document.getElementById('month-label').textContent==='2026年12月'})()`)
 	check(`(()=>{document.getElementById('month-prev').click();return document.getElementById('month-label').textContent==='2026年11月'})()`)
+	if _, err := chromedp.Run(browser, func(ctx context.Context, t *chromedp.Target) (chromedp.Void, error) {
+		_, err := cdp.Call(ctx, t, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: 390, Height: 844, DeviceScaleFactor: 1, Mobile: true})
+		return chromedp.Void{}, err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	check(`document.documentElement.scrollWidth <= window.innerWidth && document.querySelector('.month-grid').getBoundingClientRect().right <= window.innerWidth`)
+	if path := os.Getenv("CALENDAR_SCREENSHOT"); path != "" {
+		image, err := chromedp.Run(browser, chromedp.FullScreenshot(90))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, image, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 }
