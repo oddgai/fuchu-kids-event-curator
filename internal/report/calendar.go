@@ -138,7 +138,7 @@ func calendarView(r event.Report) calendarPage {
 							end = rangeDate.Start
 						}
 						if d.ISO >= rangeDate.Start && d.ISO <= end {
-							d.Items = append(d.Items, calendarItem{entry.Target, entry.Event.Title, entry.Event.TimeText, entry.Kind})
+							d.Items = append(d.Items, calendarItem{entry.Target, calendarTitle(entry.Event.Title), entry.Event.TimeText, entry.Kind})
 							break
 						}
 					}
@@ -149,4 +149,8 @@ func calendarView(r event.Report) calendarPage {
 		v.Months = append(v.Months, m)
 	}
 	return v
+}
+
+func calendarTitle(title string) string {
+	return strings.TrimSpace(regexp.MustCompile(`^【[0-9０-９].*?開催】`).ReplaceAllString(title, ""))
 }
