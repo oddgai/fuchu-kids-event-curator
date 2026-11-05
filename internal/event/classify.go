@@ -174,6 +174,18 @@ func classify(e Event, ageMonths int, availability bool) Assessment {
 }
 
 func firstChildEvidence(e Event) string {
+	for _, s := range []string{e.VerifiedText, e.ParticipationText, e.ContentText} {
+		for _, line := range strings.FieldsFunc(s, func(r rune) bool { return r == '\n' || r == '。' }) {
+			if containsAny(normalized(line), "おもちゃを持って入", "お子様移動遊具", "小さなお子様から", "ご乗車お待ち", "小学校入学前のお子様の入場も可能") {
+				r := []rune(line)
+				if len(r) > 160 {
+					line = string(r[:160]) + "…"
+				}
+				return line
+			}
+		}
+	}
+
 	for _, s := range []string{e.VerifiedText, e.AgeText, e.ParticipationText, e.ContentText, e.Summary, e.Title} {
 		for _, line := range strings.FieldsFunc(s, func(r rune) bool { return r == '\n' || r == '。' }) {
 			if positiveChild(normalized(line)) {

@@ -83,3 +83,18 @@ func TestSeparateInformationAndReviewSections(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectionErrorsAreReadableWithoutStackTraces(t *testing.T) {
+	var b bytes.Buffer
+	raw := `exception "Uncaught (in promise) Error: 詳細データの待機期限" at tick (<anonymous>:1:257)`
+	r := event.Report{Warnings: []string{"観光協会: " + raw}, Sources: []event.SourceResult{{Name: "観光協会", Status: "partial", Error: raw}}}
+	if err := WriteHTML(&b, r); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(b.String(), "at tick") || strings.Contains(b.String(), "anonymous") {
+		t.Fatal("stack trace exposed")
+	}
+	if !strings.Contains(b.String(), "取得できなかった情報") {
+		t.Fatal("failure not explained")
+	}
+}
