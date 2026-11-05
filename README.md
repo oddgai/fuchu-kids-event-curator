@@ -144,3 +144,9 @@ REPORT_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 [設計書](docs/specs/2026-11-04-event-curator-design.md)、[実装計画・仮置き判断](docs/plans/2026-11-05-event-curator.md)、[開発方針](AGENTS.md)も参照してください。
 Issue本文は背景・実現したいこと・完了条件、PR本文は背景・変更内容・確認方法に統一します。
 [write-issue](.agents/skills/write-issue/SKILL.md)・[create-pr](.agents/skills/create-pr/SKILL.md)を用意しています。
+
+## 月表示カレンダー
+
+HTMLは月曜始まりの月表示で、前後月のボタンとイベントのタップで詳細を確認できます。要確認候補は下の別枠に置き、未確定の日付でカレンダーを埋めません。不明な会場・料金・時間・対象年齢等は欄ごと省略します。
+詳細のGoogleカレンダー登録リンクは予定の下書きを開くもので、自動保存しません。明確な開始〜終了がある単日開催だけ時刻付き、その他は終日で開きます。複数日・休館日・複数回公演の時間は保存前に確認してください。日付不明の候補にリンクは出しません。
+PDF・PNGはクリックなしでも読める詳細一覧として保存します。JavaScriptが無効でも詳細一覧を閲覧できます。

@@ -2,6 +2,7 @@ package report
 
 import (
 	"bytes"
+	"github.com/PuerkitoBio/goquery"
 	"strings"
 	"testing"
 	"time"
@@ -16,12 +17,12 @@ func TestHTMLPreservesUncertaintyAndSources(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := b.String()
-	for _, want := range []string{"&lt;script&gt;", "https://example.org/event", "対象年齢不明", "開催日不明", "要予約", "11月10日", "詳細要確認", "失敗した情報源", "通信失敗", "2026-11-05", "2026-12-04", "10:02"} {
+	for _, want := range []string{"&lt;script&gt;", "https://example.org/event", "開催日未確定", "要予約", "11月10日", "詳細要確認", "失敗した情報源", "通信失敗", "2026-11-05", "2026-12-04", "10:02"} {
 		if !strings.Contains(html, want) {
 			t.Errorf("missing %q", want)
 		}
 	}
-	if strings.Contains(html, "<script>") || strings.Contains(html, "javascript:") {
+	if strings.Contains(html, "<script>alert(1)</script>") || strings.Contains(html, "javascript:") {
 		t.Fatal("unsafe event content rendered")
 	}
 }
@@ -42,17 +43,20 @@ func TestHTMLExplainsStatusesAndHighlightsUnconfirmedEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := b.String()
-	for _, want := range []string{"（要確認）", "明示された年齢条件の範囲内", "取得済み", "一部取得", "取得失敗", "保留", "開催日未確定", "興味の補助情報", "自然体験のキーワードを含む"} {
+	for _, want := range []string{"取得済み", "一部取得", "取得失敗", "保留", "開催日未確定", "興味の補助情報", "自然体験のキーワードを含む"} {
 		if !strings.Contains(html, want) {
 			t.Errorf("missing explanation %q", want)
 		}
 	}
+	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
+	doc.Find("script,style").Remove()
+	visibleText := doc.Text()
 	for _, technical := range []string{"unknown", "eligible", "success", "partial", "disabled", "unexpected_internal_value"} {
-		if strings.Contains(html, technical) {
+		if strings.Contains(visibleText, technical) {
 			t.Errorf("technical status exposed: %s", technical)
 		}
 	}
-	if strings.Count(html, "開催日未確定") != 1 {
+	if strings.Count(html, "開催日未確定") != 2 {
 		t.Error("known event incorrectly marked unconfirmed")
 	}
 }
@@ -96,5 +100,21 @@ func TestCollectionErrorsAreReadableWithoutStackTraces(t *testing.T) {
 	}
 	if !strings.Contains(b.String(), "取得できなかった情報") {
 		t.Fatal("failure not explained")
+	}
+}
+
+func TestUnknownFieldsAreOmitted(t *testing.T) {
+	var b bytes.Buffer
+	r := event.Report{From: "2026-11-05", Until: "2026-11-30", Events: []event.Event{{Title: "親子の遊び", Venue: "会場不明", Fee: "不明", Dates: []event.DateRange{{Start: "2026-11-07"}}}}}
+	if err := WriteHTML(&b, r); err != nil {
+		t.Fatal(err)
+	}
+	for _, text := range []string{"<dt>会場</dt>", "<dt>参加費</dt>", "<dt>時間</dt>", "<dt>対象年齢</dt>"} {
+		if strings.Contains(b.String(), text) {
+			t.Errorf("unknown field exposed %s", text)
+		}
+	}
+	if !strings.Contains(b.String(), "Googleカレンダーに登録") {
+		t.Fatal("registration link missing")
 	}
 }
