@@ -70,3 +70,16 @@ func TestDeferredSourceDoesNotCreateClickableLink(t *testing.T) {
 		t.Fatal("source status missing")
 	}
 }
+
+func TestSeparateInformationAndReviewSections(t *testing.T) {
+	var out bytes.Buffer
+	r := event.Report{Information: []event.Event{{Title: "期間のイルミネーション", DateText: "11月〜12月", URL: "https://example.org/info"}}, Review: []event.Event{{Title: "日程未定の公園遊び", Assessment: &event.Assessment{Category: "recommend", Reasons: []string{"遊びの記載あり"}, Evidence: []string{"お子様用の遊具"}}}}}
+	if err := WriteHTML(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	for _, text := range []string{"期間限定のお出かけ情報", "要確認の候補", "期間のイルミネーション", "日程未定の公園遊び", "お子様用の遊具"} {
+		if !strings.Contains(out.String(), text) {
+			t.Errorf("missing %s", text)
+		}
+	}
+}
