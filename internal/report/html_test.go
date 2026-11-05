@@ -10,6 +10,72 @@ import (
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 )
 
+func TestCalendarSpansWeeksWithoutBridgingMissingDays(t *testing.T) {
+	r := event.Report{From: "2026-11-06", Until: "2026-11-09", Events: []event.Event{
+		{Title: "連続開催", Dates: []event.DateRange{{Start: "2026-11-05", End: "2026-11-10"}}},
+		{Title: "別々の日", Dates: []event.DateRange{{Start: "2026-11-07"}, {Start: "2026-11-09"}}},
+	}}
+	var b bytes.Buffer
+	if err := WriteHTML(&b, r); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(&b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bars := doc.Find(`.calendar-event[title="連続開催"]`)
+	if bars.Length() != 2 {
+		t.Fatalf("want one continuous bar per week, got %d", bars.Length())
+	}
+	for i, want := range []string{"grid-column:5 / span 3;grid-row:1", "grid-column:1 / span 1;grid-row:1"} {
+		if got, _ := bars.Eq(i).Attr("style"); got != want {
+			t.Errorf("segment %d: %q, want %q", i, got, want)
+		}
+		if got, _ := bars.Eq(i).Attr("data-open"); got != "detail-0" {
+			t.Errorf("segment opens different details: %s", got)
+		}
+	}
+	separate := doc.Find(`.calendar-event[title="別々の日"]`)
+	if separate.Length() != 2 {
+		t.Fatalf("separate days: %d", separate.Length())
+	}
+	separate.Each(func(_ int, bar *goquery.Selection) {
+		style, _ := bar.Attr("style")
+		if !strings.Contains(style, "span 1;") || !strings.Contains(style, "grid-row:2") {
+			t.Errorf("nonconsecutive or overlapping event incorrectly placed: %s", style)
+		}
+	})
+}
+
+func TestCalendarSpansMonthBoundaryWithoutDuplicateBars(t *testing.T) {
+	r := event.Report{From: "2026-11-30", Until: "2026-12-02", Information: []event.Event{
+		{Title: "期間情報", Dates: []event.DateRange{
+			{Start: "2026-11-30", End: "2026-12-02"},
+			{Start: "2026-11-30", End: "2026-12-01"},
+		}},
+	}}
+	var b bytes.Buffer
+	if err := WriteHTML(&b, r); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(&b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bars := doc.Find(".calendar-event.seasonal")
+	if bars.Length() != 2 {
+		t.Fatalf("overlapping ranges or neighboring-month cells duplicated bars: %d", bars.Length())
+	}
+	for i, want := range []string{"grid-column:1 / span 1;grid-row:1", "grid-column:2 / span 2;grid-row:1"} {
+		if got, _ := bars.Eq(i).Attr("style"); got != want {
+			t.Errorf("month segment %d: %s, want %s", i, got, want)
+		}
+	}
+	if !bars.First().HasClass("continues-after") || bars.First().HasClass("continues-before") || !bars.Last().HasClass("continues-before") || bars.Last().HasClass("continues-after") {
+		t.Fatal("month boundary continuation markers do not match actual duration")
+	}
+}
+
 func TestHTMLPreservesUncertaintyAndSources(t *testing.T) {
 	r := event.Report{GeneratedAt: time.Date(2026, 11, 5, 1, 2, 0, 0, time.UTC), From: "2026-11-05", Until: "2026-12-04", Events: []event.Event{{Title: "<script>alert(1)</script>", URL: "javascript:alert(2)", Sources: []event.SourceRef{{Name: "公式", URL: "https://example.org/event"}}, Reservation: "要予約", DeadlineText: "11月10日", NeedsReview: []string{"詳細要確認"}}}, Sources: []event.SourceResult{{Name: "失敗した情報源", Status: "error", Error: "通信失敗"}}}
 	var b bytes.Buffer

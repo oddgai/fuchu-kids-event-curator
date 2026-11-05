@@ -5,6 +5,7 @@ import (
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -84,6 +85,16 @@ type calendarDay struct {
 type calendarMonth struct {
 	Key, Label string
 	Days       []calendarDay
+	Weeks      []calendarWeek
+}
+type calendarWeek struct {
+	Days []calendarDay
+	Bars []calendarBar
+}
+type calendarBar struct {
+	calendarItem
+	Column, Span, Lane              int
+	ContinuesBefore, ContinuesAfter bool
 }
 type detailEntry struct {
 	Target, Kind string
@@ -132,23 +143,102 @@ func calendarView(r event.Report) calendarPage {
 					if entry.Kind == "pending" {
 						continue
 					}
-					for _, rangeDate := range entry.Event.Dates {
-						end := rangeDate.End
-						if end == "" {
-							end = rangeDate.Start
-						}
-						if d.ISO >= rangeDate.Start && d.ISO <= end {
-							d.Items = append(d.Items, calendarItem{entry.Target, calendarTitle(entry.Event.Title), entry.Event.TimeText, entry.Kind})
-							break
-						}
+					if eventOccursOn(entry.Event, d.ISO) {
+						d.Items = append(d.Items, calendarItem{entry.Target, calendarTitle(entry.Event.Title), entry.Event.TimeText, entry.Kind})
 					}
 				}
 			}
 			m.Days = append(m.Days, d)
 		}
+		for i := 0; i < len(m.Days); i += 7 {
+			days := m.Days[i : i+7]
+			m.Weeks = append(m.Weeks, calendarWeek{Days: days, Bars: weekBars(days, v.Entries)})
+		}
 		v.Months = append(v.Months, m)
 	}
 	return v
+}
+
+func eventOccursOn(e event.Event, date string) bool {
+	for _, d := range e.Dates {
+		end := d.End
+		if end == "" {
+			end = d.Start
+		}
+		if _, err := time.Parse("2006-01-02", d.Start); err != nil {
+			continue
+		}
+		if _, err := time.Parse("2006-01-02", end); err != nil {
+			continue
+		}
+		if date >= d.Start && date <= end {
+			return true
+		}
+	}
+	return false
+}
+
+// weekBars joins consecutive visible dates of the same event, then packs bars
+// into nonoverlapping lanes. Separate occurrences never bridge a missing day.
+func weekBars(days []calendarDay, entries []detailEntry) []calendarBar {
+	var bars []calendarBar
+	for _, entry := range entries {
+		for i := 0; i < len(days); {
+			var item *calendarItem
+			for j := range days[i].Items {
+				if days[i].Items[j].Target == entry.Target {
+					item = &days[i].Items[j]
+					break
+				}
+			}
+			if item == nil {
+				i++
+				continue
+			}
+			first := i
+			for i++; i < len(days); i++ {
+				found := false
+				for _, candidate := range days[i].Items {
+					if candidate.Target == entry.Target {
+						found = true
+						break
+					}
+				}
+				if !found {
+					break
+				}
+			}
+			start, _ := time.Parse("2006-01-02", days[first].ISO)
+			end, _ := time.Parse("2006-01-02", days[i-1].ISO)
+			bars = append(bars, calendarBar{
+				calendarItem: *item, Column: first + 1, Span: i - first,
+				ContinuesBefore: eventOccursOn(entry.Event, start.AddDate(0, 0, -1).Format("2006-01-02")),
+				ContinuesAfter:  eventOccursOn(entry.Event, end.AddDate(0, 0, 1).Format("2006-01-02")),
+			})
+		}
+	}
+	// Put longer events above single-day events and preserve source order on ties.
+	sort.SliceStable(bars, func(i, j int) bool {
+		if bars[i].Span != bars[j].Span {
+			return bars[i].Span > bars[j].Span
+		}
+		return bars[i].Column < bars[j].Column
+	})
+	var occupied []uint8
+	for i := range bars {
+		bar := &bars[i]
+		mask := uint8((1<<bar.Span)-1) << (bar.Column - 1)
+		lane := 0
+		for lane < len(occupied) && occupied[lane]&mask != 0 {
+			lane++
+		}
+		if lane == len(occupied) {
+			occupied = append(occupied, 0)
+		}
+		occupied[lane] |= mask
+		bar.Lane = lane + 1
+	}
+	return bars
 }
 
 func calendarTitle(title string) string {
