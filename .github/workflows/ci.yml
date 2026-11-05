@@ -22,7 +22,7 @@ jobs:
       - name: PDF・PNGのブラウザ統合テスト
         env:
           REPORT_TEST_BROWSER: ${{ steps.chrome.outputs.chrome-path }}
-        run: mise exec -- go test ./internal/report -run TestExportBrowser -v
+        run: mise exec -- go test ./internal/report -run 'TestExportBrowser|TestCalendarInteractionBrowser' -v
       - name: 架空サンプルでCLIの出力を確認
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}

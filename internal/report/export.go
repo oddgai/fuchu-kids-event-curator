@@ -67,6 +67,9 @@ func Export(ctx context.Context, htmlPath, outDir, browserPath string, perPage i
 		if _, e := chromedp.Evaluate[bool](`document.fonts.ready.then(()=>true)`, chromedp.EvalAwaitPromise)(ctx, t); e != nil {
 			return chromedp.Void{}, e
 		}
+		if _, e := chromedp.Evaluate[chromedp.Void](`document.documentElement.classList.add('exporting');document.querySelectorAll('details').forEach(d=>d.open=true);document.querySelectorAll('dialog').forEach(d=>d.close())`)(ctx, t); e != nil {
+			return chromedp.Void{}, e
+		}
 		var e error
 		count, e = chromedp.Evaluate[int](`document.querySelectorAll('[data-event]').length`)(ctx, t)
 		if e != nil {

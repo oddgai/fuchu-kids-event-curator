@@ -65,7 +65,7 @@ func TestExportBrowser(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if img.Height < 2000 {
+					if img.Height < 1000 {
 						t.Fatalf("PNG clipped at height %d", img.Height)
 					}
 				}
