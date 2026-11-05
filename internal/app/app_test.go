@@ -50,3 +50,19 @@ func TestAllFailedStillWritesStatus(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestGroupedReportCanBeReclassifiedWithoutLosingSections(t *testing.T) {
+	dir := t.TempDir()
+	input := filepath.Join(dir, "grouped.json")
+	b, _ := json.Marshal(event.Report{Information: []event.Event{{Title: "冬のイルミネーション", Dates: []event.DateRange{{Start: "2026-11-01", End: "2026-12-31"}}}}, Review: []event.Event{{Title: "プレーパーク"}}, Sources: []event.SourceResult{{Status: "success"}}})
+	os.WriteFile(input, b, 0600)
+	if err := Run(context.Background(), []string{"-input", input, "-from", "2026-11-01", "-output", filepath.Join(dir, "out")}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	b, _ = os.ReadFile(filepath.Join(dir, "out", "report.json"))
+	var got event.Report
+	json.Unmarshal(b, &got)
+	if len(got.Information) != 1 || len(got.Review) != 1 {
+		t.Fatalf("sections lost: %+v", got)
+	}
+}

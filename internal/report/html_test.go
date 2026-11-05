@@ -70,3 +70,31 @@ func TestDeferredSourceDoesNotCreateClickableLink(t *testing.T) {
 		t.Fatal("source status missing")
 	}
 }
+
+func TestSeparateInformationAndReviewSections(t *testing.T) {
+	var out bytes.Buffer
+	r := event.Report{Information: []event.Event{{Title: "期間のイルミネーション", DateText: "11月〜12月", URL: "https://example.org/info"}}, Review: []event.Event{{Title: "日程未定の公園遊び", Assessment: &event.Assessment{Category: "recommend", Reasons: []string{"遊びの記載あり"}, Evidence: []string{"お子様用の遊具"}}}}}
+	if err := WriteHTML(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	for _, text := range []string{"期間限定のお出かけ情報", "要確認の候補", "期間のイルミネーション", "日程未定の公園遊び", "お子様用の遊具"} {
+		if !strings.Contains(out.String(), text) {
+			t.Errorf("missing %s", text)
+		}
+	}
+}
+
+func TestCollectionErrorsAreReadableWithoutStackTraces(t *testing.T) {
+	var b bytes.Buffer
+	raw := `exception "Uncaught (in promise) Error: 詳細データの待機期限" at tick (<anonymous>:1:257)`
+	r := event.Report{Warnings: []string{"観光協会: " + raw}, Sources: []event.SourceResult{{Name: "観光協会", Status: "partial", Error: raw}}}
+	if err := WriteHTML(&b, r); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(b.String(), "at tick") || strings.Contains(b.String(), "anonymous") {
+		t.Fatal("stack trace exposed")
+	}
+	if !strings.Contains(b.String(), "取得できなかった情報") {
+		t.Fatal("failure not explained")
+	}
+}

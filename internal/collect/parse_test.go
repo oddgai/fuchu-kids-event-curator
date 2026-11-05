@@ -203,3 +203,15 @@ func TestMachidukuriUsesDisplayedCalendarYear(t *testing.T) {
 		t.Fatalf("missing detail %+v", e)
 	}
 }
+
+func TestContentAndGlobalAdmissionAreRetained(t *testing.T) {
+	s := Source{ID: "theater", Name: "劇場", URL: "https://example.org/event"}
+	b := []byte(`<div id="content"><h1>音楽会</h1><p>親子で聴く音楽</p><h2>プログラム</h2><p>曲目の紹介</p><ul class="info"><li>小学校入学前のお子様の入場はご遠慮ください。</li></ul></div>`)
+	e, err := ParseDetail(s, Candidate{Title: "音楽会", URL: s.URL}, b, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(e.ContentText, "曲目の紹介") || !strings.Contains(e.ParticipationText, "小学校入学前") {
+		t.Fatalf("evidence lost: %+v", e)
+	}
+}

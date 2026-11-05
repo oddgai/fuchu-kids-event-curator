@@ -88,6 +88,8 @@ func Run(ctx context.Context, args []string, out io.Writer) error {
 	output := fs.String("output", "output", "成果物の保存先")
 	input := fs.String("input", "", "保存済み収集JSONから再生成（通信しない）")
 	export := fs.Bool("export", false, "PDFと分割PNGも生成する（Chromiumが必要）")
+	feedbackPath := fs.String("feedback", "feedback/reviews.json", "人手確認済みの根拠JSON（空文字で無効）")
+	evaluate := fs.Bool("evaluate-feedback", false, "内容評価の回帰比較をevaluation.jsonへ保存")
 	browser := fs.String("browser", os.Getenv("CHROME_PATH"), "Chrome/Chromiumの実行ファイル")
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -131,6 +133,13 @@ func Run(ctx context.Context, args []string, out io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("保存JSON: %w", err)
 		}
+
+		raw.Events = append(raw.Events, raw.Information...)
+		raw.Events = append(raw.Events, raw.Review...)
+		raw.Events = append(raw.Events, raw.Excluded...)
+		raw.Information = nil
+		raw.Review = nil
+		raw.Excluded = nil
 	} else {
 		raw.Events, raw.Sources = collect.Run(ctx, collect.NewClient(time.Duration(c.IntervalMS)*time.Millisecond), collect.Options{IDs: ids, MaxPages: c.MaxPages, MaxEvents: c.MaxEvents, From: *from, Until: until, BrowserPath: *browser})
 	}
@@ -140,7 +149,29 @@ func Run(ctx context.Context, args []string, out io.Writer) error {
 	if err := writeJSON(filepath.Join(*output, "collected.json"), raw); err != nil {
 		return err
 	}
-	result := event.Report{GeneratedAt: now, From: *from, Until: until, AgeMonths: c.AgeMonths, Sources: raw.Sources, Events: event.Select(raw.Events, *from, until, c.AgeMonths)}
+
+	var feedback event.FeedbackSet
+	if *feedbackPath != "" {
+		feedback, err = event.LoadFeedback(*feedbackPath)
+		explicit := false
+		fs.Visit(func(f *flag.Flag) {
+			if f.Name == "feedback" {
+				explicit = true
+			}
+		})
+		if err != nil && (!os.IsNotExist(err) || explicit) {
+			return fmt.Errorf("フィードバック: %w", err)
+		}
+	}
+	enriched := event.ApplyFeedback(raw.Events, feedback)
+	curated := event.Curate(enriched, *from, until, c.AgeMonths)
+	result := event.Report{GeneratedAt: now, From: *from, Until: until, AgeMonths: c.AgeMonths, Sources: raw.Sources, Events: curated.Events, Information: curated.Information, Review: curated.Review, Excluded: curated.Excluded}
+	if *evaluate {
+		if err := writeJSON(filepath.Join(*output, "evaluation.json"), event.EvaluateFeedback(raw.Events, feedback, c.AgeMonths)); err != nil {
+			return err
+		}
+	}
+
 	sort.SliceStable(result.Events, func(i, j int) bool {
 		a, b := result.Events[i], result.Events[j]
 		if len(a.Dates) == 0 {
@@ -184,7 +215,7 @@ func Run(ctx context.Context, args []string, out io.Writer) error {
 			return err
 		}
 	}
-	fmt.Fprintf(out, "候補 %d件 / 収集 %d件 → %s\n", len(result.Events), len(raw.Events), htmlPath)
+	fmt.Fprintf(out, "おすすめ %d件 / 期間情報 %d件 / 要確認 %d件 / 除外 %d件 / 収集 %d件 → %s\n", len(result.Events), len(result.Information), len(result.Review), len(result.Excluded), len(raw.Events), htmlPath)
 	for _, s := range result.Sources {
 		fmt.Fprintf(out, "%s: %s (%d件) %s\n", s.ID, s.Status, s.Count, s.Error)
 	}

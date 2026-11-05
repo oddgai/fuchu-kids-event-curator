@@ -294,6 +294,16 @@ func ParseDetail(s Source, c Candidate, b []byte, now time.Time) (event.Event, e
 			fields[k] = v
 		}
 	})
+
+	e.ParticipationText = strings.Join(textLines(metadata), "\n")
+	if s.ID == "theater" {
+		e.ParticipationText += "\n" + strings.Join(textLines(body.Find("ul.info")), "\n")
+	}
+	contentRunes := []rune(strings.Join(textLines(body), "\n"))
+	if len(contentRunes) > 16000 {
+		contentRunes = contentRunes[:16000]
+	}
+	e.ContentText = string(contentRunes)
 	lines := textLines(body)
 	for _, line := range textLines(metadata) {
 		parts := strings.SplitN(strings.ReplaceAll(line, "：", ":"), ":", 2)
