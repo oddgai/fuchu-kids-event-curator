@@ -3,68 +3,27 @@ package report
 import (
 	"fmt"
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
-	"net/url"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
 
-type CalendarLink struct{ URL, Label, Note string }
-
-func calendarLinks(e event.Event) []CalendarLink {
-	var out []CalendarLink
-	for _, d := range e.Dates {
-		start, err := time.Parse("2006-01-02", d.Start)
-		if err != nil {
+func eventSources(e event.Event) []event.SourceRef {
+	var sources []event.SourceRef
+	seen := map[string]bool{}
+	for _, source := range e.Sources {
+		source.URL = safeURL(source.URL)
+		if source.URL != "" && seen[source.URL] {
 			continue
 		}
-		end := start
-		if d.End != "" {
-			end, err = time.Parse("2006-01-02", d.End)
-			if err != nil || end.Before(start) {
-				continue
-			}
-		}
-		dates := start.Format("20060102") + "/" + end.AddDate(0, 0, 1).Format("20060102")
-		note := "終日で登録画面を開きます。時刻や休館日を確認してください。"
-		text := strings.NewReplacer("：", ":", "時", ":", "分", "").Replace(e.TimeText)
-		text = strings.Map(func(r rune) rune {
-			if r >= '０' && r <= '９' {
-				return r - '０' + '0'
-			}
-			return r
-		}, text)
-		re := regexp.MustCompile(`(?:^|[^0-9])([0-9]{1,2}):([0-9]{2})?\s*[〜～~－–-]\s*([0-9]{1,2}):([0-9]{2})?(?:$|[^0-9])`)
-		matches := re.FindAllStringSubmatch(text, -1)
-		if start.Equal(end) && len(matches) == 1 && len(regexp.MustCompile(`[0-9]{1,2}:`).FindAllString(text, -1)) == 2 && !regexp.MustCompile(`(?i)(午前|午後|am|pm)`).MatchString(text) {
-			h1, _ := strconv.Atoi(matches[0][1])
-			m1, _ := strconv.Atoi(matches[0][2])
-			h2, _ := strconv.Atoi(matches[0][3])
-			m2, _ := strconv.Atoi(matches[0][4])
-			if h1 < 24 && h2 < 24 && m1 < 60 && m2 < 60 && h2*60+m2 > h1*60+m1 {
-				dates = fmt.Sprintf("%sT%02d%02d00/%sT%02d%02d00", start.Format("20060102"), h1, m1, end.Format("20060102"), h2, m2)
-				note = "日本時間の予定です。保存前に日時をご確認ください。"
-			}
-		}
-		q := url.Values{"action": {"TEMPLATE"}, "text": {e.Title}, "dates": {dates}, "ctz": {"Asia/Tokyo"}, "stz": {"Asia/Tokyo"}, "etz": {"Asia/Tokyo"}}
-		details := e.Summary
-		if e.DateNote != "" {
-			details += "\n" + e.DateNote
-			note = e.DateNote + " " + note
-		}
-		if safeURL(e.URL) != "" {
-			details += "\n出典: " + e.URL
-		}
-		details += "\n" + e.DateText + "\n" + e.TimeText
-		q.Set("details", details)
-		if known(e.Venue) {
-			q.Set("location", e.Venue)
-		}
-		out = append(out, CalendarLink{URL: "https://calendar.google.com/calendar/r/eventedit?" + q.Encode(), Label: start.Format("1月2日") + "の予定を登録", Note: note})
+		seen[source.URL] = true
+		sources = append(sources, source)
 	}
-	return out
+	if len(sources) == 0 && safeURL(e.URL) != "" {
+		sources = append(sources, event.SourceRef{Name: "公式情報", URL: e.URL})
+	}
+	return sources
 }
 func known(s string) bool {
 	v := strings.TrimSpace(s)
