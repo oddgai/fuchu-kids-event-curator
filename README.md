@@ -35,12 +35,13 @@ mise exec -- go run ./cmd/fuchu-kids-event-curator -feedback ''
 
 ## 準備
 
-[mise](https://mise.jdx.dev/)を導入してから実行します。GoとGitleaksはmise.tomlに固定され、グローバル設定の変更は不要です。
+[mise](https://mise.jdx.dev/)を導入してから実行します。Goと開発用ツールはmise.tomlに固定され、グローバル設定の変更は不要です。Pythonはpre-commitの実行環境としてmiseで管理します。
 
 ```sh
 mise trust
 mise install
 mise exec -- go version
+mise run hooks:install
 ```
 
 PDF・PNGの出力と観光協会の動的ページ取得にはChromeまたはChromiumが必要です。日本語フォント（LinuxではNoto CJK等）も用意してください。
@@ -130,6 +131,8 @@ GitHub Actionsの「イベント一覧を生成する」を使います。
 ```sh
 mise run fmt
 mise run check
+mise run hooks
+mise run lint:workflows
 
 # git addした変更をコミット前に検査
 mise run secrets:staged
@@ -145,7 +148,11 @@ REPORT_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 ブラウザ統合テストは `REPORT_TEST_BROWSER` 指定時に実行し、CIでも日本語フォントを用意して実行します。
 実サイトの構造が変わった場合は、情報源別のエラーと [調査書](docs/specs/source-research.md) を照合します。
 
-秘密情報の検査には[Gitleaks](https://github.com/gitleaks/gitleaks)の標準ルールを使います。CIの独立したGitleaksジョブは全Git履歴を取得して検査し、検出時に失敗します。検出値はログでマスクします。`secrets:staged` はステージ済み変更だけ、`secrets` はコミット済み履歴だけを対象とするため、変更は `git add` してからコミット前の検査を実行してください。Gitフックの自動設定は行いません。
+秘密情報の検査には[Gitleaks](https://github.com/gitleaks/gitleaks)の標準ルールを使います。CIの独立したGitleaksジョブは全Git履歴を取得して検査し、検出時に失敗します。検出値はログでマスクします。`secrets:staged` はステージ済み変更だけ、`secrets` はコミット済み履歴だけを対象にします。
+
+`mise run hooks:install` を一度実行すると、このリポジトリのコミット時にpre-commitがGitleaks、gofmt、ワークフローの検査を自動実行します。gofmtが整形した場合は差分を確認して再度 `git add` してください。新しいcloneでもセットアップ時にフックをインストールします。`mise run hooks` は全対象ファイルの検査ですが、Gitleaksのフックはステージ済み変更のみを対象とし、コミット済み履歴は `mise run secrets` とCIのGitleaksジョブで検査します。
+
+ワークフローはactionlintとShellCheckで記述・埋め込みシェルを、zizmorでセキュリティ設定を検査します。ローカルとCIで同じツールと設定を使い、検査時のネット接続は不要です。GitHub Actionsの参照はpinactでSHAに固定しています。Action追加時は `mise run actions:pin`、バージョン更新時は `mise run actions:update` を使い、差分を確認してからコミットします。この2コマンドはGitHubへの接続が必要です。
 
 [GitHub Issues](https://github.com/oddgai/fuchu-kids-event-curator/issues)を1件ずつ進めます。
 [設計書](docs/specs/2026-11-04-event-curator-design.md)、[実装計画・仮置き判断](docs/plans/2026-11-05-event-curator.md)、[開発方針](AGENTS.md)も参照してください。
