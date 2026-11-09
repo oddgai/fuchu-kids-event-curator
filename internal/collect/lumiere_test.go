@@ -13,7 +13,7 @@ import (
 func TestLumierePublishedImageOnly(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[{"status":"publish","link":"https://www.lumiere-fuchu.jp/event/434/","title":{"rendered":"【11月8日 開催】音楽会"},"content":{"rendered":"<p><img src='poster.jpg'></p>"}},{"status":"draft","link":"https://www.lumiere-fuchu.jp/event/9/","title":{"rendered":"非公開"},"content":{"rendered":"<p>非公開記事</p>"}}]`))
+		_, _ = w.Write([]byte(`[{"status":"publish","date":"2026-10-15T09:00:01","link":"https://www.lumiere-fuchu.jp/event/434/","title":{"rendered":"【11月8日 開催】音楽会"},"content":{"rendered":"<p><img src='poster.jpg'></p>"}},{"status":"draft","link":"https://www.lumiere-fuchu.jp/event/9/","title":{"rendered":"非公開"},"content":{"rendered":"<p>非公開記事</p>"}}]`))
 	}))
 	defer srv.Close()
 	c := NewClient(0)
@@ -27,10 +27,10 @@ func TestLumierePublishedImageOnly(t *testing.T) {
 	}
 }
 
-func TestLumiereEstimatesTitleYearWithoutUsingPublicationDay(t *testing.T) {
+func TestLumiereEstimatesTitleYearFromModificationDate(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[{"status":"publish","date":"2026-10-15T09:00:01","link":"https://www.lumiere-fuchu.jp/event/434/","title":{"rendered":"【11月8日 開催】ファミリーコンサート"},"content":{"rendered":"<p><img src='poster.jpg'></p>"}}]`))
+		_, _ = w.Write([]byte(`[{"status":"publish","date":"2025-10-15T09:00:01","modified":"2026-10-30T09:00:01","link":"https://www.lumiere-fuchu.jp/event/434/","title":{"rendered":"【11月8日 開催】ファミリーコンサート"},"content":{"rendered":"<p><img src='poster.jpg'></p>"}}]`))
 	}))
 	defer srv.Close()
 	c := NewClient(0)
@@ -40,8 +40,8 @@ func TestLumiereEstimatesTitleYearWithoutUsingPublicationDay(t *testing.T) {
 		t.Fatalf("%+v %v", got, err)
 	}
 	e := got[0]
-	if len(e.Dates) != 1 || e.Dates[0].Start != "2026-11-08" || !strings.Contains(e.DateNote, "2026-10-15") {
-		t.Fatalf("lost title date or publication evidence: %+v", e)
+	if len(e.Dates) != 1 || e.Dates[0].Start != "2026-11-08" || !strings.Contains(e.DateNote, "2026-10-30") {
+		t.Fatalf("lost title date or modification evidence: %+v", e)
 	}
 	for _, note := range e.NeedsReview {
 		if strings.Contains(note, "掲載日から補完していません") {

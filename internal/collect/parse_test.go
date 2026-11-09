@@ -99,14 +99,19 @@ func TestDetailDoesNotBorrowUnrelatedOrAmbiguousTitleYear(t *testing.T) {
 	}
 }
 
-func TestParkTitleYearEstimateUsesPublicationEvidence(t *testing.T) {
+func TestParkTitleYearEstimateUsesNearestFutureDate(t *testing.T) {
 	for _, tc := range []struct{ title, published, want string }{
 		{"プレーパークを開催します 11/14(土)13：00～", "2026年10月30日", "2026-11-14"},
 		{"プレーパークを開催します 10/24(土)13：00～", "2026年10月10日", "2026-10-24"},
 		{"親子イベント 1/2(土)", "2026年12月20日", "2027-01-02"},
+		{"親子イベント 2/11", "2026年12月20日", "2027-02-11"},
+		{"親子イベント 2/29", "2026年10月30日", "2028-02-29"},
+		{"親子イベント 2/29", "2096年3月1日", "2104-02-29"},
+		{"親子イベント 11/14", "2026年11月14日", "2026-11-14"},
 		{"プレーパーク 11/14(土)", "", ""},
 		{"プレーパーク 11/14(日)", "2026年10月30日", ""},
-		{"プレーパーク 11/14(土)", "2026年1月1日", ""},
+		{"プレーパーク 11/14(土)", "2026年1月1日", "2026-11-14"},
+		{"プレーパーク 11/14", "2026年11月15日", "2027-11-14"},
 		{"プレーパーク 11/14(土)", "2026年11月15日", ""},
 		{"【11月8日申込締切】親子工作教室", "2026年10月15日", ""},
 		{"親子イベント 11月8日から受付開始", "2026年10月15日", ""},
@@ -130,6 +135,14 @@ func TestParkTitleYearEstimateUsesPublicationEvidence(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestParkPrefersExplicitPageModificationDate(t *testing.T) {
+	body := []byte(`<meta property="article:modified_time" content="2026-10-29T15:30:00Z"><div class="news-detail__item"><span class="news-list__date">2025年10月1日</span></div><div class="news-detail__title">プレーパークを開催します 11/14</div><main class="news-detail"><p>親子で自由に遊べるイベントです。</p></main>`)
+	e, err := ParseDetail(Source{ID: "park"}, Candidate{URL: "https://example.org/news/261114/"}, body, time.Now())
+	if err != nil || len(e.Dates) != 1 || e.Dates[0].Start != "2026-11-14" || !strings.Contains(e.DateNote, "2026-10-30") {
+		t.Fatalf("page modification date not used in JST: %+v err=%v", e, err)
 	}
 }
 

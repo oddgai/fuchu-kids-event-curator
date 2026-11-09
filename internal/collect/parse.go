@@ -419,11 +419,14 @@ func ParseDetail(s Source, c Candidate, b []byte, now time.Time) (event.Event, e
 	}
 	e.Dates = parseDetailDates(e.DateText, e.Title)
 	if s.ID == "park" {
-		published := clean(d.Find(".news-detail__item .news-list__date").First().Text())
-		if dates := ParseDates(published); len(dates) == 1 {
-			day, _ := time.Parse("2006-01-02", dates[0].Start)
-			estimateEventYear(&e, day)
+		updated, _ := time.Parse(time.RFC3339, clean(d.Find(`meta[property="article:modified_time"]`).AttrOr("content", "")))
+		if updated.IsZero() {
+			pageDate := clean(d.Find(".news-detail__item .news-list__date").First().Text())
+			if dates := ParseDates(pageDate); len(dates) == 1 {
+				updated, _ = time.Parse("2006-01-02", dates[0].Start)
+			}
 		}
+		estimateEventYear(&e, updated)
 	}
 	if strings.Contains(e.DateText, "除く") || strings.Contains(e.DateText, "休館") {
 		e.NeedsReview = append(e.NeedsReview, "開催期間内の休館・除外日は出典の注記を確認してください")
