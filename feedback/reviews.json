@@ -1,0 +1,381 @@
+{
+  "report": "output/check/report.json",
+  "reviews": [
+    {
+      "event_id": "473aa0f56ca82ab0",
+      "title": "第62回府中市民芸術文化祭",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/recommend/1008127.html",
+      "decision": "ng",
+      "reason": "イベント単体ではなく複数イベントの集合。個々の詳細を見ても2歳が楽しめそうなものがない（ユーザー評価）。",
+      "reference_url": "https://www.city.fuchu.tokyo.jp/event/bunka/geijyutubunnkasai2022.html",
+      "signals": [
+        "aggregate_listing",
+        "no_suitable_individual_events"
+      ],
+      "scope": "このイベントへの評価。すべての集合ページを自動除外する規則にはしない。"
+    },
+    {
+      "event_id": "e527defa24186017",
+      "title": "落ち葉プールが登場！！",
+      "url": "https://www.fuchu-cpf.or.jp/museum/event/1005742.html",
+      "decision": "ok",
+      "reason": "楽しそう。「おもちゃを持って入らないでください」という注意書きから、子供の参加を想定していると判断できる（ユーザー評価）。",
+      "evidence_text": "おもちゃを持って入らないでください。",
+      "signals": [
+        "play_activity",
+        "child_participation_implied_by_rules"
+      ],
+      "scope": "子供向けの手掛かり。2歳の参加可否や明示された年齢条件とは区別する。"
+    },
+    {
+      "event_id": "3115599a621d2083",
+      "title": "【2026年10月13日（火）～11月30日（月）開催】モッパングルメフェア",
+      "url": "https://seiseki.org/%e3%80%902026%e5%b9%b410%e6%9c%8813%e6%97%a5%ef%bc%88%e7%81%ab%ef%bc%89%ef%bd%9e11%e6%9c%8830%e6%97%a5%ef%bc%88%e6%9c%88%ef%bc%89%e9%96%8b%e5%82%ac%e3%80%91%e3%83%a2%e3%83%83%e3%83%91%e3%83%b3/",
+      "decision": "ng",
+      "reason": "グルメがメインのイベントには、今はまだ興味がなさそう（ユーザー評価）。",
+      "signals": [
+        "food_main",
+        "not_current_interest"
+      ],
+      "scope": "グルメが主目的なら優先度を下げる。飲食の出店がある遊び・体験イベントまで一律に除外しない。"
+    },
+    {
+      "event_id": "362e46af4fdfa4f1",
+      "title": "【キッチンカーカレンダー】2026年11月分",
+      "url": "https://seiseki.org/%e3%80%90%e3%82%ad%e3%83%83%e3%83%81%e3%83%b3%e3%82%ab%e3%83%bc%e3%82%ab%e3%83%ac%e3%83%b3%e3%83%80%e3%83%bc%e3%80%912026%e5%b9%b411%e6%9c%88%e5%88%86/",
+      "decision": "ng",
+      "reason": "11月にキッチンカーが出る日程が載っているだけで、子供が楽しむ遊び・体験イベントではない（ユーザー評価）。",
+      "signals": [
+        "vendor_schedule_only",
+        "food_main"
+      ],
+      "scope": "出店日程だけの案内を候補から外す。遊びや体験を伴うイベントに飲食出店がある場合とは区別する。"
+    },
+    {
+      "event_id": "024e4e11c67cacf1",
+      "title": "【2026年11月7日（土）・8日（日）開催】第6回せいせきカワマチオープンデイ（マルシェ）",
+      "url": "https://seiseki.org/%e3%80%902026%e5%b9%b411%e6%9c%887%e6%97%a5%ef%bc%88%e5%9c%9f%ef%bc%89%e3%83%bb8%e6%97%a5%ef%bc%88%e6%97%a5%ef%bc%89%e9%96%8b%e5%82%ac%e3%80%91%e7%ac%ac6%e5%9b%9e%e3%81%9b%e3%81%84%e3%81%9b%e3%81%8d/",
+      "decision": "ok",
+      "reason": "「お子様移動遊具やテント、テーブル、イス、フラクタルテント（日よけ）もご用意しています！」とあり、子供が遊べる内容がある（ユーザー評価）。",
+      "evidence_text": "お子様移動遊具やテント、テーブル、イス、フラクタルテント（日よけ）もご用意しています！",
+      "signals": [
+        "explicit_child_play_equipment",
+        "family_rest_facilities"
+      ],
+      "scope": "マルシェや飲食出店があっても、子供向けの遊具など具体的な遊びの要素があれば候補にする。個別の年齢制限は別に確認する。"
+    },
+    {
+      "event_id": "185f32a824d05083",
+      "title": "府中の森芸術劇場開館35周年記念 どりーむコンサートVol.135 哀愁の調べと煌めきのシンフォニー",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/recommend/1007742.html",
+      "decision": "ng",
+      "reason": "「小学校入学前のお子様の入場はご遠慮ください。」という明示的な入場制限があるため、2歳は参加対象外（ユーザー評価）。",
+      "evidence_text": "小学校入学前のお子様の入場はご遠慮ください。",
+      "signals": [
+        "explicit_preschool_admission_restriction"
+      ],
+      "scope": "「未就学児入場不可」だけでなく、小学校入学前・入場はご遠慮ください等の言い回しも参加制限として扱う。例外条件がある場合は別に確認する。"
+    },
+    {
+      "event_id": "f03aadb89a7dc3dc",
+      "title": "大國魂神社 酉の市",
+      "url": "https://www.kankou-fuchu.com/?p=we-page-event-entry&event=455231&cat=17414&type=event",
+      "decision": "ng",
+      "reason": "酉の市は大人向けと感じるため、今の子供向けの候補には合わない（ユーザー評価）。",
+      "signals": [
+        "adult_oriented_festival",
+        "not_current_interest"
+      ],
+      "scope": "酉の市のような大人向けと評価された催しは優先度を下げる。祭り全般や子供向けの遊びがある催しを一律に除外しない。"
+    },
+    {
+      "event_id": "711cdc6bdf543803",
+      "title": "【2026年11月13日（金）開催】かわぞいテラス",
+      "url": "https://seiseki.org/%e3%80%902026%e5%b9%b411%e6%9c%8813%e6%97%a5%ef%bc%88%e9%87%91%ef%bc%89%e9%96%8b%e5%82%ac%e3%80%91%e3%81%8b%e3%82%8f%e3%81%9e%e3%81%84%e3%83%86%e3%83%a9%e3%82%b9/",
+      "decision": "ng",
+      "reason": "開催時間の18時〜20時は遅い。昼間のイベントがよい（ユーザー評価）。",
+      "evidence_text": "18時～20時",
+      "signals": [
+        "evening_event",
+        "prefer_daytime"
+      ],
+      "scope": "昼間を優先する。18〜20時の催しは対象外とするが、一律の開始・終了時刻の閾値は未確定。"
+    },
+    {
+      "event_id": "71dc68b5037740de",
+      "title": "府中まんなかイルミ2026",
+      "url": "https://www.kankou-fuchu.com/?p=we-page-event-entry&event=400214&cat=17414&type=event",
+      "decision": "ng",
+      "reason": "イベントというより期間中にイルミネーションが行われている情報。イベント一覧ではなく「いつからいつまでイルミネーションがやっているか」を簡潔に知りたい（ユーザー評価）。",
+      "signals": [
+        "seasonal_attraction",
+        "separate_information_category"
+      ],
+      "preferred_treatment": "イベント候補からは外し、期間限定のお出かけ情報として開催期間を短く表示する。",
+      "scope": "夜間イベントを好むという意味ではなく、イルミネーションの開催期間情報には関心がある。"
+    },
+    {
+      "event_id": "6238cbc27039ed26",
+      "title": "でんしゃであそぼう！武蔵府中鉄道模型博2026",
+      "url": "https://www.fuchu-cpf.or.jp/museum/event/1005994.html",
+      "decision": "ok",
+      "reason": "小さなお子様から大人まで乗車を歓迎する旨の記載があり、幼児も楽しめる乗車体験がある（ユーザー評価）。",
+      "evidence_text": "さなお子様から大人まで、ご乗車お待ちしております",
+      "evidence_note": "ユーザー引用をそのまま保存。冒頭に脱字がある可能性がある。",
+      "signals": [
+        "young_children_explicitly_welcome",
+        "ride_experience"
+      ],
+      "scope": "幼児歓迎の記載と具体的な乗車体験を推薦の手掛かりにする。イベント内の別企画の対象条件とは区別する。"
+    },
+    {
+      "event_id": "1161606c2771736a",
+      "title": "府中の森芸術劇場presents きゃめるアイリッシュ・ミュージックライブ in FORIS",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/1003104/1008122.html",
+      "decision": "ok",
+      "reason": "「この公演は、小学校入学前のお子様の入場も可能な公演です」と明記されている（ユーザー評価）。",
+      "evidence_text": "この公演は、小学校入学前のお子様の入場も可能な公演です",
+      "signals": [
+        "preschool_admission_explicitly_allowed"
+      ],
+      "scope": "公演や音楽という分類だけで除外せず、未就学児の入場可否の記載を確認して判断する。"
+    },
+    {
+      "event_id": "6920b0521f862467",
+      "title": "郷土の森観光物産館 バースデー感謝祭",
+      "url": "https://www.kankou-fuchu.com/?p=we-page-event-entry&event=156683&cat=17414&type=event",
+      "decision": "ng",
+      "reason": "食べ物がメインのため、今の子供向けの候補には合わない（ユーザー評価）。",
+      "signals": [
+        "food_main",
+        "not_current_interest"
+      ],
+      "scope": "名称が感謝祭でも、内容が飲食中心なら優先度を下げる。子供向けの遊び・体験がある場合とは区別する。"
+    },
+    {
+      "event_id": "909006e8209e055d",
+      "title": "【2026年11月23日（月・祝）開催】聖蹟桜ヶ丘エリマネクリーンアクション",
+      "url": "https://seiseki.org/%e3%80%902026%e5%b9%b411%e6%9c%8823%e6%97%a5%ef%bc%88%e6%9c%88%e3%83%bb%e7%a5%9d%ef%bc%89%e9%96%8b%e5%82%ac%e3%80%91%e8%81%96%e8%b9%9f%e6%a1%9c%e3%83%b6%e4%b8%98%e3%82%a8%e3%83%aa%e3%83%9e%e3%83%8d/",
+      "decision": "ng",
+      "reason": "ゴミ拾い自体はよいが、2歳にはまだ早いかもしれない（ユーザー評価）。",
+      "signals": [
+        "cleanup_activity",
+        "developmental_fit_concern"
+      ],
+      "scope": "清掃活動は今の年齢では優先度を下げる。地域活動全般や自然遊びを一律に除外するものではない。"
+    },
+    {
+      "event_id": "dba89ecc1674796a",
+      "title": "府中の森クラシックコレクション 務川慧悟ピアノ・リサイタル",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/recommend/1007962.html",
+      "decision": "ng",
+      "reason": "「小学校入学前のお子様の入場はご遠慮ください。」という明示的な入場制限がある（ユーザー評価）。",
+      "evidence_text": "小学校入学前のお子様の入場はご遠慮ください。",
+      "signals": [
+        "explicit_preschool_admission_restriction"
+      ],
+      "scope": "未就学児への入場制限として扱う。音楽イベント全般を除外するものではない。"
+    },
+    {
+      "event_id": "77b512109aa789c3",
+      "title": "郷土の森博物館バックヤードツアー",
+      "url": "https://www.fuchu-cpf.or.jp/museum/event/1008189.html",
+      "decision": "ng",
+      "reason": "楽しそうだが、今の年齢にはまだ早い（ユーザー評価）。",
+      "signals": [
+        "interesting_but_too_advanced",
+        "developmental_fit_concern"
+      ],
+      "scope": "このバックヤードツアーは今の候補から外す。博物館の体験全般や将来の参加まで否定するものではない。"
+    },
+    {
+      "event_id": "5d18241006bb38b8",
+      "title": "プレーパークを開催します 11/14(土)13：00～",
+      "url": "https://fuchupark-area.com/news/261114/",
+      "decision": "ok",
+      "reason": "プレーパークは子供向けイベントなので候補に合う（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "プレーパークを子供向けの遊びの手掛かりとして扱う。個別の日時・年齢制限は別途確認する。"
+    },
+    {
+      "event_id": "b151cdde46084526",
+      "title": "草木染め体験イベントのお知らせ 11/7(土)13:00～",
+      "url": "https://fuchupark-area.com/news/261107/",
+      "decision": "ng",
+      "reason": "チラシ画像に「対象4歳くらい〜」と記載があり、2歳には合わない（ユーザー評価）。",
+      "evidence_text": "対象4歳くらい〜",
+      "evidence_location": "flyer_image",
+      "signals": [
+        "age_target_older_than_child",
+        "age_condition_in_image"
+      ],
+      "scope": "画像内の年齢条件を未確認のまま対象年齢不明の候補として残した例。ユーザー確認済み条件として記録する。OCR実装の追加承認を意味しない。"
+    },
+    {
+      "event_id": "f1e0f16037f80a89",
+      "title": "プレーパークを開催します 10/24(土)13：00～",
+      "url": "https://fuchupark-area.com/news/261024/",
+      "decision": "ok",
+      "reason": "プレーパークは楽しい（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "内容への好評価として記録する。10月24日という開催日の掲載対象期間への適合とは分けて扱う。"
+    },
+    {
+      "event_id": "eff4333d104ecfb4",
+      "title": "プレーパークを開催します 9/27(日)10：30～",
+      "url": "https://fuchupark-area.com/news/260927/",
+      "decision": "ok",
+      "reason": "プレーパークなので候補に合う（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "内容への好評価。開催日が掲載対象期間内かどうかは別に判定する。"
+    },
+    {
+      "event_id": "905225713f1d3134",
+      "title": "ナイトプレーパークを開催します 7/31(金)18：30～",
+      "url": "https://fuchupark-area.com/news/260731/",
+      "decision": "ok",
+      "reason": "プレーパークはOK（ユーザー評価）。18:30開始のナイトプレーパークにもOKとの回答。",
+      "signals": [
+        "playpark",
+        "child_play_activity",
+        "evening_playpark_accepted"
+      ],
+      "scope": "この夜のプレーパークへの好評価を保持する。昼間優先の希望を撤回した、または夜の催し全般がOKになったとは解釈しない。開催期間への適合は別に判定する。"
+    },
+    {
+      "event_id": "52dbf0dc3ef8ec31",
+      "title": "プレーパークを開催します 7/11(土)13：00～",
+      "url": "https://fuchupark-area.com/news/260711/",
+      "decision": "ok",
+      "reason": "プレーパークはOK（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "内容への好評価。開催日が掲載対象期間内かどうかは別に判定する。"
+    },
+    {
+      "event_id": "a910f861e5b543b0",
+      "title": "プレーパークを開催します 6/20(土)13：00～",
+      "url": "https://fuchupark-area.com/news/260620/",
+      "decision": "ok",
+      "reason": "プレーパークはOK（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "内容への好評価。開催日が掲載対象期間内かどうかは別に判定する。"
+    },
+    {
+      "event_id": "50b0aadfc96a8462",
+      "title": "プレーパークを開催します 5/16(土)13：00～",
+      "url": "https://fuchupark-area.com/news/260516/",
+      "decision": "ok",
+      "reason": "プレーパークはOK（ユーザー評価）。",
+      "signals": [
+        "playpark",
+        "child_play_activity"
+      ],
+      "scope": "内容への好評価。開催日が掲載対象期間内かどうかは別に判定する。"
+    },
+    {
+      "event_id": "95aa17d146db1435",
+      "title": "季節のお花で楽しもう 春の寄せ植えイベントのお知らせ 4/25(土)13:00～※ご好評につき定員に達しました",
+      "url": "https://fuchupark-area.com/news/260425/",
+      "decision": "ok",
+      "reason": "寄せ植えイベントはOK。府中市立公園サイトのイベントは全体として好みに合いそう（ユーザー評価）。",
+      "signals": [
+        "park_source_preferred",
+        "plant_activity"
+      ],
+      "scope": "内容への好評価。開催日・対象年齢・満員等の参加可否は別に判定し、明示的NGの草木染め（対象4歳くらい〜）は上書きしない。"
+    },
+    {
+      "event_id": "381f950e78aee192",
+      "title": "府中の森めばえコンサートVol.60",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/recommend/1008109.html",
+      "decision": "ng",
+      "reason": "「小学校入学前のお子様の入場はご遠慮ください。」という明示的な入場制限がある（ユーザー評価）。",
+      "evidence_text": "小学校入学前のお子様の入場はご遠慮ください。",
+      "signals": [
+        "explicit_preschool_admission_restriction"
+      ],
+      "scope": "未就学児への入場制限として扱う。コンサート全般を除外するものではない。"
+    },
+    {
+      "event_id": "8445bb7250dc21c8",
+      "title": "カルチャー短期講座 「大人のボイトレ＆教養講座」〈秋〉",
+      "url": "https://www.fuchu-cpf.or.jp/theater/1000331/1003104/1008022.html",
+      "decision": "ng",
+      "reason": "対象が高校生以上で、未就学児の同伴も不可と明記されている（ユーザー評価）。",
+      "evidence_text": "高校生以上\n（注）未就学児 同伴不可",
+      "signals": [
+        "age_target_older_than_child",
+        "preschool_accompaniment_prohibited"
+      ],
+      "scope": "参加者の年齢制限と、子供の同伴可否の両方を確認する。"
+    },
+    {
+      "event_id": "f5b62f59b0d7b65b",
+      "title": "【11月8日 開催】ルミエールFES NEC府中吹奏楽団ファミリーコンサート",
+      "url": "https://www.lumiere-fuchu.jp/event/434/",
+      "decision": "ok",
+      "reason": "ファミリーコンサートと書いてあるものは好みに合いそう（ユーザー評価）。",
+      "signals": [
+        "family_concert"
+      ],
+      "scope": "ファミリーコンサートを有力な肯定の手掛かりにする。明示的な年齢制限や入場不可条件は優先して確認する。"
+    },
+    {
+      "event_id": "89590c9f72c249b1",
+      "title": "【11月22日 開催】ルミエールで落語会",
+      "url": "https://www.lumiere-fuchu.jp/event/84/",
+      "decision": "ng",
+      "reason": "落語は大人向けなので、今の子供向けの候補には合わない（ユーザー評価）。",
+      "signals": [
+        "rakugo",
+        "adult_oriented_content"
+      ],
+      "scope": "落語会は今の候補では優先度を下げる。幼児向けと明記された特別な企画があれば別に判断する。"
+    },
+    {
+      "event_id": "75b07917cd021053",
+      "title": "【11月28日開催】親子で楽しむ 松ぼっくりとクリスマスリースの栗カップケーキ教室（受付終了）",
+      "url": "https://www.lumiere-fuchu.jp/event/855/",
+      "decision": "ng",
+      "reason": "対象が5〜12歳と明記されており、2歳は対象外（ユーザー評価）。",
+      "evidence_text": "対象：5-12歳",
+      "signals": [
+        "age_target_older_than_child",
+        "explicit_age_range"
+      ],
+      "scope": "親子向けという名称でも、明示された対象年齢を優先する。"
+    }
+  ],
+  "preferences": {
+    "park_source": {
+      "value": "prefer",
+      "tentative": true,
+      "reason": "府中市立公園サイトからのイベントは全部okでいいかも",
+      "scope": "情報源として優先する。個別のNG、年齢制限、開催期間、満員・中止は別に確認する。"
+    },
+    "family_concert": {
+      "value": "prefer",
+      "tentative": true,
+      "reason": "ファミリーコンサートって書いてあったらokかも",
+      "scope": "肯定の手掛かりとして扱い、明示的な年齢制限・入場制限は別途確認する。"
+    }
+  },
+  "completed": true,
+  "reviewed_at": "2026-11-05",
+  "child_age_months": 32
+}
