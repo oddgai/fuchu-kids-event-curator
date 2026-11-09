@@ -35,12 +35,13 @@ mise exec -- go run ./cmd/fuchu-kids-event-curator -feedback ''
 
 ## 準備
 
-[mise](https://mise.jdx.dev/)を導入してから実行します。Goはmise.tomlに固定され、グローバル設定の変更は不要です。
+[mise](https://mise.jdx.dev/)を導入してから実行します。Goと開発用ツールはmise.tomlに固定され、グローバル設定の変更は不要です。Pythonはpre-commitの実行環境としてmiseで管理します。
 
 ```sh
 mise trust
 mise install
 mise exec -- go version
+mise run hooks:install
 ```
 
 PDF・PNGの出力と観光協会の動的ページ取得にはChromeまたはChromiumが必要です。日本語フォント（LinuxではNoto CJK等）も用意してください。
@@ -106,7 +107,7 @@ mise exec -- go run ./cmd/fuchu-kids-event-curator \
 上限に達した場合は一部取得と表示します。網羅的なイベント一覧ではありません。博物館はトップの案内から直接辿れる範囲で、カテゴリ内のすべての記事を巡回しません。
 詳細条件が画像・PDFだけにある場合は抽出しません。まちづくり府中の配布可否は後日確認事項です。
 
-開催年を掲載日やURLから補いません。期間不明の古い記事が要確認候補に残ることがあります。
+開催年がない公園・ルミエールの告知は、ページ日付を基準に推定し、その根拠を注記します。基準日も分からない告知は要確認に残し、現在年やURLからは補いません。
 複数企画を含むページの各企画の年齢・料金をイベント全体の条件にはしません。例外を含む年齢条件や学校段階は原文確認に回します。
 単純な年齢範囲のみ自動判定します。中止記事と、雨天時のみ中止という条件は区別します。
 
@@ -130,6 +131,13 @@ GitHub Actionsの「イベント一覧を生成する」を使います。
 ```sh
 mise run fmt
 mise run check
+mise run hooks
+mise run lint:workflows
+
+# git addした変更をコミット前に検査
+mise run secrets:staged
+# 取得済みの全ブランチ・タグのGit履歴を検査
+mise run secrets
 
 # Chromeを使う0件・1件・13件のPDF/PNG統合テスト
 REPORT_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
@@ -140,7 +148,21 @@ REPORT_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 ブラウザ統合テストは `REPORT_TEST_BROWSER` 指定時に実行し、CIでも日本語フォントを用意して実行します。
 実サイトの構造が変わった場合は、情報源別のエラーと [調査書](docs/specs/source-research.md) を照合します。
 
+秘密情報の検査には[Gitleaks](https://github.com/gitleaks/gitleaks)の標準ルールを使います。CIの独立したGitleaksジョブは全Git履歴を取得して検査し、検出時に失敗します。検出値はログでマスクします。`secrets:staged` はステージ済み変更だけ、`secrets` はコミット済み履歴だけを対象にします。
+
+`mise run hooks:install` を一度実行すると、このリポジトリのコミット時にpre-commitがGitleaks、gofmt、ワークフローの検査を自動実行します。gofmtが整形した場合は差分を確認して再度 `git add` してください。新しいcloneでもセットアップ時にフックをインストールします。`mise run hooks` は全対象ファイルの検査ですが、Gitleaksのフックはステージ済み変更のみを対象とし、コミット済み履歴は `mise run secrets` とCIのGitleaksジョブで検査します。
+
+ワークフローはactionlintとShellCheckで記述・埋め込みシェルを、zizmorでセキュリティ設定を検査します。ローカルとCIで同じツールと設定を使い、検査時のネット接続は不要です。GitHub Actionsの参照はpinactでSHAに固定しています。Action追加時は `mise run actions:pin`、バージョン更新時は `mise run actions:update` を使い、差分を確認してからコミットします。この2コマンドはGitHubへの接続が必要です。
+
 [GitHub Issues](https://github.com/oddgai/fuchu-kids-event-curator/issues)を1件ずつ進めます。
 [設計書](docs/specs/2026-11-04-event-curator-design.md)、[実装計画・仮置き判断](docs/plans/2026-11-05-event-curator.md)、[開発方針](AGENTS.md)も参照してください。
 Issue本文は背景・実現したいこと・完了条件、PR本文は背景・変更内容・確認方法に統一します。
 [write-issue](.agents/skills/write-issue/SKILL.md)・[create-pr](.agents/skills/create-pr/SKILL.md)を用意しています。
+
+## 月表示カレンダー
+
+HTMLは月曜始まりの月表示で、前後月のボタンとイベントのタップで詳細を確認できます。要確認候補は下の別枠に置き、未確定の日付でカレンダーを埋めません。不明な会場・料金・時間・対象年齢等は欄ごと省略します。
+複数日開催は横長のバーでつなぎ、週・月の境界で分割して表示します。日程が飛び飛びの場合は隙間をつながず、重なるイベントは上下に並べます。どの区間からも同じ詳細を開けます。
+タイトルに年が明記されていれば開催日欄の月日と照合します。年のない公園・ルミエールの単日告知は、ページ更新日以降で最初に来る開催月日の年を仮置きし、「仮：」を付けて表示します。例えば2026/10/30更新の11/14は2026/11/14、2026/12/20更新の2/11は2027/2/11です。更新日当日も対象に含みます。ルミエールはAPIの更新日時、公園は更新日時のメタ情報またはページ表示日付を使います。曜日が記載されていて一致しない場合や根拠が足りないものは要確認に残します。推定の根拠は詳細とGoogle登録下書きにも残します。
+詳細のGoogleカレンダー登録リンクは予定の下書きを開くもので、自動保存しません。明確な開始〜終了がある単日開催だけ時刻付き、その他は終日で開きます。複数日・休館日・複数回公演の時間は保存前に確認してください。日付不明の候補にリンクは出しません。
+PDF・PNGはクリックなしでも読める詳細一覧として保存します。JavaScriptが無効でも詳細一覧を閲覧できます。

@@ -1,5 +1,12 @@
 [tools]
 go = "1.27.3"
+gitleaks = "8.30.1"
+pre-commit = "4.7.0"
+python = "3.14.10"
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+zizmor = "1.32.0"
+pinact = "5.0.2"
 
 [env]
 GOTOOLCHAIN = "local"
@@ -7,6 +14,34 @@ GOTOOLCHAIN = "local"
 [tasks.fmt]
 description = "Goコードを整形する"
 run = "go fmt ./..."
+
+[tasks.secrets]
+description = "Gitの全履歴から秘密情報を検査する"
+run = 'gitleaks git --redact --no-banner --log-opts="--all" .'
+
+[tasks."secrets:staged"]
+description = "ステージ済みの変更から秘密情報を検査する"
+run = "gitleaks git --redact --no-banner --pre-commit --staged ."
+
+[tasks."hooks:install"]
+description = "このリポジトリにコミット前フックを設定する"
+run = "pre-commit install"
+
+[tasks.hooks]
+description = "全対象ファイルのコミット前チェックを実行する"
+run = "pre-commit run --all-files"
+
+[tasks."lint:workflows"]
+description = "GitHub Actionsと埋め込みシェルの記述・安全性を検査する"
+run = ["actionlint", "zizmor --offline --strict-collection --no-progress .github/workflows .pre-commit-config.yaml"]
+
+[tasks."actions:pin"]
+description = "GitHub Actionsの参照をSHAに固定する（ネット接続が必要）"
+run = "pinact run"
+
+[tasks."actions:update"]
+description = "GitHub Actionsを更新してSHAに固定する（ネット接続が必要）"
+run = "pinact run --update"
 
 [tasks.check]
 description = "整形・静的解析・テスト・ビルドを確認する"

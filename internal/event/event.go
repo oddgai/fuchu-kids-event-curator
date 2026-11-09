@@ -21,6 +21,7 @@ type Event struct {
 	Sources           []SourceRef `json:"sources"`
 	Dates             []DateRange `json:"dates,omitempty"`
 	DateText          string      `json:"date_text,omitempty"`
+	DateNote          string      `json:"date_note,omitempty"` // Evidence and warning when the year is estimated.
 	TimeText          string      `json:"time_text,omitempty"`
 	Venue             string      `json:"venue,omitempty"`
 	AgeText           string      `json:"age_text,omitempty"`
