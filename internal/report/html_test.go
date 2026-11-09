@@ -12,9 +12,31 @@ import (
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 )
 
+func TestDetailHasSimpleRegistrationAndSourceLinks(t *testing.T) {
+	e := event.Event{Title: "親子コンサート", URL: "https://example.org/concert", Venue: "フォーリス1階 光と風の広場", Dates: []event.DateRange{{Start: "2026-11-21"}}, TimeText: "11:00〜12:00", Sources: []event.SourceRef{{Name: "府中の森芸術劇場", URL: "https://example.org/concert"}}, Assessment: &event.Assessment{Category: "recommend", Reasons: []string{"幼児歓迎"}, Evidence: []string{"未就学児も入場可能"}}}
+	var b bytes.Buffer
+	if err := WriteHTML(&b, event.Report{From: "2026-11-01", Until: "2026-11-30", Events: []event.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(&b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := doc.Find("#events [data-event]")
+	if card.Find(".calendar-links a").Text() != "Googleカレンダーに登録" {
+		t.Fatalf("redundant registration label: %s", card.Find(".calendar-links a").Text())
+	}
+	if strings.Contains(card.Text(), "判定理由") || strings.Contains(card.Text(), "幼児歓迎") || strings.Contains(card.Text(), "詳細情報") {
+		t.Fatal("internal judgment or duplicate source label is visible")
+	}
+	if !strings.Contains(card.Text(), e.Venue) || card.Find(`a[href="https://example.org/concert"]`).Length() != 1 {
+		t.Fatal("location missing or source link duplicated")
+	}
+}
+
 func TestEstimatedYearIsVisibleInCalendarAndDetails(t *testing.T) {
 	var e event.Event
-	if err := json.Unmarshal([]byte(`{"title":"プレーパーク","dates":[{"start":"2026-11-14"}],"date_note":"開催年は推定：掲載日2026-10-30をもとに2026年として仮表示しています。"}`), &e); err != nil {
+	if err := json.Unmarshal([]byte(`{"title":"プレーパーク","url":"https://example.org/play","dates":[{"start":"2026-11-14"}],"date_note":"開催年は推定：掲載日2026-10-30をもとに2026年として仮表示しています。"}`), &e); err != nil {
 		t.Fatal(err)
 	}
 	var b bytes.Buffer
@@ -30,8 +52,8 @@ func TestEstimatedYearIsVisibleInCalendarAndDetails(t *testing.T) {
 	}
 	link := doc.Find("#events .calendar-links a").AttrOr("href", "")
 	u, _ := url.Parse(link)
-	if !strings.Contains(u.Query().Get("details"), "開催年は推定") {
-		t.Fatal("Google calendar draft lost the year estimate warning")
+	if u.Query().Get("details") != e.URL {
+		t.Fatal("Google calendar description is not URL-only")
 	}
 	doc.Find(".detail-lists [data-event]").Each(func(_ int, card *goquery.Selection) {
 		if !strings.Contains(card.Text(), "開催年は推定") {
@@ -177,7 +199,7 @@ func TestSeparateInformationAndReviewSections(t *testing.T) {
 	if err := WriteHTML(&out, r); err != nil {
 		t.Fatal(err)
 	}
-	for _, text := range []string{"期間限定のお出かけ情報", "要確認の候補", "期間のイルミネーション", "日程未定の公園遊び", "お子様用の遊具"} {
+	for _, text := range []string{"期間限定のお出かけ情報", "要確認の候補", "期間のイルミネーション", "日程未定の公園遊び"} {
 		if !strings.Contains(out.String(), text) {
 			t.Errorf("missing %s", text)
 		}
@@ -205,7 +227,7 @@ func TestUnknownFieldsAreOmitted(t *testing.T) {
 	if err := WriteHTML(&b, r); err != nil {
 		t.Fatal(err)
 	}
-	for _, text := range []string{"<dt>会場</dt>", "<dt>参加費</dt>", "<dt>時間</dt>", "<dt>対象年齢</dt>"} {
+	for _, text := range []string{"<dt>場所</dt>", "<dt>参加費</dt>", "<dt>時間</dt>", "<dt>対象年齢</dt>"} {
 		if strings.Contains(b.String(), text) {
 			t.Errorf("unknown field exposed %s", text)
 		}

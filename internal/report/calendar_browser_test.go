@@ -27,7 +27,7 @@ func TestCalendarInteractionBrowser(t *testing.T) {
 	browser, closeBrowser := chromedp.NewContext(allocator)
 	defer closeBrowser()
 	r := event.Report{From: "2026-11-01", Until: "2026-12-10", Events: []event.Event{
-		{Title: "親子で遊ぶ日", Dates: []event.DateRange{{Start: "2026-11-07"}}},
+		{Title: "親子で遊ぶ日", Dates: []event.DateRange{{Start: "2026-11-07"}}, TimeText: "10:00〜11:30", Venue: "府中公園", URL: "https://example.org/play", Sources: []event.SourceRef{{Name: "公園", URL: "https://example.org/play"}}, Assessment: &event.Assessment{Category: "recommend", Reasons: []string{"幼児歓迎"}}},
 		{Title: "期間のある催し", Dates: []event.DateRange{{Start: "2026-11-06", End: "2026-11-10"}}},
 	}}
 	path := filepath.Join(t.TempDir(), "calendar.html")
@@ -48,6 +48,7 @@ func TestCalendarInteractionBrowser(t *testing.T) {
 	}
 	check(`document.documentElement.classList.contains('interactive') && document.getElementById('month-label').textContent==='2026年11月'`)
 	check(`(()=>{document.querySelector('.calendar-event[title="親子で遊ぶ日"]').click();const d=document.getElementById('event-dialog');return d.open&&d.textContent.includes('親子で遊ぶ日')&&!!d.querySelector('a[href*="calendar.google.com"]')})()`)
+	check(`(()=>{const d=document.getElementById('event-dialog'),a=d.querySelector('.calendar-links a'),q=new URL(a.href).searchParams;return a.textContent==='Googleカレンダーに登録'&&q.get('dates')==='20261107T100000/20261107T113000'&&q.get('location')==='府中公園'&&q.get('details')==='https://example.org/play'&&d.textContent.includes('府中公園')&&!d.textContent.includes('判定理由')&&!d.textContent.includes('詳細情報')&&d.querySelectorAll('a[href="https://example.org/play"]').length===1})()`)
 	check(`(()=>{document.getElementById('dialog-close').click();return !document.getElementById('event-dialog').open})()`)
 	check(`(()=>{document.getElementById('month-next').click();return document.getElementById('month-label').textContent==='2026年12月'})()`)
 	check(`(()=>{document.getElementById('month-prev').click();return document.getElementById('month-label').textContent==='2026年11月'})()`)
