@@ -2,13 +2,43 @@ package report
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/PuerkitoBio/goquery"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 )
+
+func TestEstimatedYearIsVisibleInCalendarAndDetails(t *testing.T) {
+	var e event.Event
+	if err := json.Unmarshal([]byte(`{"title":"プレーパーク","dates":[{"start":"2026-11-14"}],"date_note":"開催年は推定：掲載日2026-10-30をもとに2026年として仮表示しています。"}`), &e); err != nil {
+		t.Fatal(err)
+	}
+	var b bytes.Buffer
+	if err := WriteHTML(&b, event.Report{From: "2026-11-01", Until: "2026-11-30", Events: []event.Event{e}, Information: []event.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromReader(&b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(doc.Find(".calendar-event").Text(), "仮") || !strings.Contains(doc.Find("#events").Text(), "開催年は推定") {
+		t.Fatal("estimated year is displayed as a confirmed date")
+	}
+	link := doc.Find("#events .calendar-links a").AttrOr("href", "")
+	u, _ := url.Parse(link)
+	if !strings.Contains(u.Query().Get("details"), "開催年は推定") {
+		t.Fatal("Google calendar draft lost the year estimate warning")
+	}
+	doc.Find(".detail-lists [data-event]").Each(func(_ int, card *goquery.Selection) {
+		if !strings.Contains(card.Text(), "開催年は推定") {
+			t.Error("PDF/PNG detail list lost the year estimate warning")
+		}
+	})
+}
 
 func TestCalendarSpansWeeksWithoutBridgingMissingDays(t *testing.T) {
 	r := event.Report{From: "2026-11-06", Until: "2026-11-09", Events: []event.Event{

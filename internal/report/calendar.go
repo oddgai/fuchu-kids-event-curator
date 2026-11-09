@@ -50,6 +50,10 @@ func calendarLinks(e event.Event) []CalendarLink {
 		}
 		q := url.Values{"action": {"TEMPLATE"}, "text": {e.Title}, "dates": {dates}, "ctz": {"Asia/Tokyo"}, "stz": {"Asia/Tokyo"}, "etz": {"Asia/Tokyo"}}
 		details := e.Summary
+		if e.DateNote != "" {
+			details += "\n" + e.DateNote
+			note = e.DateNote + " " + note
+		}
 		if safeURL(e.URL) != "" {
 			details += "\n出典: " + e.URL
 		}
@@ -75,7 +79,10 @@ func known(s string) bool {
 	return !strings.HasSuffix(v, "不明")
 }
 
-type calendarItem struct{ Target, Title, Time, Kind string }
+type calendarItem struct {
+	Target, Title, Time, Kind string
+	Inferred                  bool
+}
 type calendarDay struct {
 	ISO          string
 	Number       int
@@ -102,8 +109,9 @@ type detailEntry struct {
 }
 type calendarPage struct {
 	event.Report
-	Months  []calendarMonth
-	Entries []detailEntry
+	Months            []calendarMonth
+	Entries           []detailEntry
+	HasEstimatedDates bool
 }
 
 func calendarView(r event.Report) calendarPage {
@@ -112,6 +120,7 @@ func calendarView(r event.Report) calendarPage {
 		kind := []string{"recommended", "seasonal", "pending"}[gi]
 		for _, e := range list {
 			v.Entries = append(v.Entries, detailEntry{fmt.Sprintf("detail-%d", len(v.Entries)), kind, e})
+			v.HasEstimatedDates = v.HasEstimatedDates || e.DateNote != ""
 		}
 	}
 	start, err := time.Parse("2006-01-02", r.From)
@@ -144,7 +153,7 @@ func calendarView(r event.Report) calendarPage {
 						continue
 					}
 					if eventOccursOn(entry.Event, d.ISO) {
-						d.Items = append(d.Items, calendarItem{entry.Target, calendarTitle(entry.Event.Title), entry.Event.TimeText, entry.Kind})
+						d.Items = append(d.Items, calendarItem{Target: entry.Target, Title: calendarTitle(entry.Event.Title), Time: entry.Event.TimeText, Kind: entry.Kind, Inferred: entry.Event.DateNote != ""})
 					}
 				}
 			}

@@ -1,10 +1,13 @@
 package collect
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/oddgai/fuchu-kids-event-curator/internal/event"
 )
 
 func TestSeisekiSavedHTML(t *testing.T) {
@@ -63,6 +66,102 @@ func TestDates(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDetailUsesTitleYearWithoutWideningSpecificDates(t *testing.T) {
+	for _, tc := range []struct{ title, dateText, start, end string }{
+		{"【2026年11月10日（火）～22日（日）開催】多摩市×アイスランド第2回まちバル", "聖蹟桜ヶ丘エリア 11月10日（火）～15日（日）", "2026-11-10", "2026-11-15"},
+		{"【2026年12月30日～2027年1月3日開催】親子イベント", "1月2日", "2027-01-02", ""},
+		{"【2026年11月8日開催】第2回ファミリーコンサート", "11月8日 13:00～14:00", "2026-11-08", ""},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			s := Sources()[0]
+			body := []byte(`<div class="newsSingleBlockTitle"><h3>` + tc.title + `</h3><p class="times">` + tc.dateText + `</p></div><div class="newsSingleBlock bottomSpace60"><p>親子で楽しむイベントのご案内です。</p></div>`)
+			e, err := ParseDetail(s, Candidate{Title: tc.title, URL: s.URL}, body, time.Now())
+			if err != nil || len(e.Dates) != 1 || e.Dates[0].Start != tc.start || e.Dates[0].End != tc.end {
+				t.Fatalf("dates=%+v err=%v", e.Dates, err)
+			}
+			if e.DateText != tc.dateText {
+				t.Fatalf("original date field lost: %s", e.DateText)
+			}
+		})
+	}
+}
+
+func TestDetailDoesNotBorrowUnrelatedOrAmbiguousTitleYear(t *testing.T) {
+	for _, title := range []string{"2026年に開館した会場でのイベント", "【2026年11月7日開催】親子イベント", "【2026年11月8日・2027年11月8日開催】親子イベント"} {
+		body := []byte(`<main><p>開催日：11月8日</p><p>親子で楽しむイベントのご案内です。</p></main>`)
+		e, err := ParseDetail(Source{}, Candidate{Title: title, URL: "https://example.org/event"}, body, time.Now())
+		if err != nil || len(e.Dates) != 0 {
+			t.Fatalf("unrelated/ambiguous year used: %s dates=%+v err=%v", title, e.Dates, err)
+		}
+	}
+}
+
+func TestParkTitleYearEstimateUsesNearestFutureDate(t *testing.T) {
+	for _, tc := range []struct{ title, published, want string }{
+		{"プレーパークを開催します 11/14(土)13：00～", "2026年10月30日", "2026-11-14"},
+		{"プレーパークを開催します 10/24(土)13：00～", "2026年10月10日", "2026-10-24"},
+		{"親子イベント 1/2(土)", "2026年12月20日", "2027-01-02"},
+		{"親子イベント 2/11", "2026年12月20日", "2027-02-11"},
+		{"親子イベント 2/29", "2026年10月30日", "2028-02-29"},
+		{"親子イベント 2/29", "2096年3月1日", "2104-02-29"},
+		{"親子イベント 11/14", "2026年11月14日", "2026-11-14"},
+		{"プレーパーク 11/14(土)", "", ""},
+		{"プレーパーク 11/14(日)", "2026年10月30日", ""},
+		{"プレーパーク 11/14(土)", "2026年1月1日", "2026-11-14"},
+		{"プレーパーク 11/14", "2026年11月15日", "2027-11-14"},
+		{"プレーパーク 11/14(土)", "2026年11月15日", ""},
+		{"【11月8日申込締切】親子工作教室", "2026年10月15日", ""},
+		{"親子イベント 11月8日から受付開始", "2026年10月15日", ""},
+	} {
+		t.Run(tc.title+tc.published, func(t *testing.T) {
+			body := []byte(`<div class="news-detail__item"><span class="news-list__date">` + tc.published + `</span></div><div class="news-detail__title">` + tc.title + `</div><main class="news-detail"><p>親子で自由に遊べるイベントです。</p></main>`)
+			e, err := ParseDetail(Source{ID: "park"}, Candidate{URL: "https://example.org/news/261114/"}, body, time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.want == "" {
+				if len(e.Dates) != 0 {
+					t.Fatalf("unjustified year estimate: %+v", e.Dates)
+				}
+			} else if len(e.Dates) != 1 || e.Dates[0].Start != tc.want {
+				t.Fatalf("want %s, dates=%+v", tc.want, e.Dates)
+			} else {
+				encoded, _ := json.Marshal(e)
+				if !strings.Contains(string(encoded), `"date_note"`) || !strings.Contains(string(encoded), "推定") {
+					t.Fatal("estimated year has no persistent explanation")
+				}
+			}
+		})
+	}
+}
+
+func TestParkPrefersExplicitPageModificationDate(t *testing.T) {
+	body := []byte(`<meta property="article:modified_time" content="2026-10-29T15:30:00Z"><div class="news-detail__item"><span class="news-list__date">2025年10月1日</span></div><div class="news-detail__title">プレーパークを開催します 11/14</div><main class="news-detail"><p>親子で自由に遊べるイベントです。</p></main>`)
+	e, err := ParseDetail(Source{ID: "park"}, Candidate{URL: "https://example.org/news/261114/"}, body, time.Now())
+	if err != nil || len(e.Dates) != 1 || e.Dates[0].Start != "2026-11-14" || !strings.Contains(e.DateNote, "2026-10-30") {
+		t.Fatalf("page modification date not used in JST: %+v err=%v", e, err)
+	}
+}
+
+func TestEstimatedParkDatesSeparateUpcomingAndPast(t *testing.T) {
+	var events []event.Event
+	for _, title := range []string{"プレーパークを開催します 11/14(土)13：00～", "プレーパークを開催します 10/24(土)13：00～"} {
+		body := []byte(`<div class="news-detail__item"><span class="news-list__date">2026年10月10日</span></div><div class="news-detail__title">` + title + `</div><main class="news-detail"><p>親子で自由に遊べるイベントです。</p></main>`)
+		e, err := ParseDetail(Source{ID: "park"}, Candidate{URL: "https://example.org/" + title}, body, time.Now())
+		if err != nil {
+			t.Fatal(err)
+		}
+		events = append(events, e)
+	}
+	r := event.Curate(events, "2026-11-05", "2026-12-04", 32)
+	if len(r.Events) != 1 || len(r.Excluded) != 1 || len(r.Review) != 0 || r.Events[0].Dates[0].Start != "2026-11-14" || r.Excluded[0].Dates[0].Start != "2026-10-24" {
+		t.Fatalf("upcoming/past not separated: %+v", r)
+	}
+	if r.Events[0].DateNote == "" {
+		t.Fatal("curation lost the estimated year evidence")
 	}
 }
 func TestMuseumDoesNotMixSubeventRestrictions(t *testing.T) {
