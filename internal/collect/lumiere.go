@@ -14,7 +14,8 @@ import (
 )
 
 // LumiereEvents reads only published posts exposed by the public WordPress API.
-// Publication timestamps are never interpreted as event dates.
+// Modification timestamps are only evidence for explicitly labeled year estimates;
+// the event's month/day always comes from the announcement.
 func LumiereEvents(ctx context.Context, c *Client, maxPages, maxEvents int, now time.Time) ([]event.Event, error) {
 	if maxPages <= 0 {
 		maxPages = 2
@@ -27,10 +28,11 @@ func LumiereEvents(ctx context.Context, c *Client, maxPages, maxEvents int, now 
 		Rendered string `json:"rendered"`
 	}
 	type wpPost struct {
-		Status  string   `json:"status"`
-		Link    string   `json:"link"`
-		Title   rendered `json:"title"`
-		Content rendered `json:"content"`
+		Modified string   `json:"modified"`
+		Status   string   `json:"status"`
+		Link     string   `json:"link"`
+		Title    rendered `json:"title"`
+		Content  rendered `json:"content"`
 	}
 	source := Source{ID: "", Name: "ルミエール府中", URL: "https://www.lumiere-fuchu.jp/event/"}
 	var out []event.Event
@@ -69,6 +71,9 @@ func LumiereEvents(ctx context.Context, c *Client, maxPages, maxEvents int, now 
 			e, err := ParseDetail(source, Candidate{Title: title, URL: link, DateText: title}, normalized, now)
 			if err != nil {
 				return out, err
+			}
+			if updated, err := time.ParseInLocation("2006-01-02T15:04:05", post.Modified, time.FixedZone("JST", 9*60*60)); err == nil {
+				estimateEventYear(&e, updated)
 			}
 			// An image-only announcement still has a useful source link and unknown conditions.
 			d, _ := goquery.NewDocumentFromReader(bytes.NewReader([]byte(post.Content.Rendered)))

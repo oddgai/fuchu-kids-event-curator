@@ -67,6 +67,9 @@ func Export(ctx context.Context, htmlPath, outDir, browserPath string, perPage i
 		if _, e := chromedp.Evaluate[bool](`document.fonts.ready.then(()=>true)`, chromedp.EvalAwaitPromise)(ctx, t); e != nil {
 			return chromedp.Void{}, e
 		}
+		if _, e := chromedp.Evaluate[chromedp.Void](`document.documentElement.classList.add('exporting');document.querySelectorAll('details').forEach(d=>d.open=true);document.querySelectorAll('dialog').forEach(d=>d.close())`)(ctx, t); e != nil {
+			return chromedp.Void{}, e
+		}
 		var e error
 		count, e = chromedp.Evaluate[int](`document.querySelectorAll('[data-event]').length`)(ctx, t)
 		if e != nil {
@@ -89,7 +92,7 @@ func Export(ctx context.Context, htmlPath, outDir, browserPath string, perPage i
 	}
 	for index := 0; index < pages; index++ {
 		var png []byte
-		script := fmt.Sprintf(`Array.from(document.querySelectorAll('[data-event]')).forEach((el,i)=>{el.style.display=(i >= %d && i < %d)?'':'none'})`, index*perPage, (index+1)*perPage)
+		script := fmt.Sprintf(`Array.from(document.querySelectorAll('[data-event]')).forEach((el,i)=>{el.style.display=(i >= %d && i < %d)?'':'none'});document.querySelectorAll('[data-event-section]').forEach(s=>{const cards=Array.from(s.querySelectorAll('[data-event]'));s.style.display=cards.length&&cards.every(e=>e.style.display==='none')?'none':''})`, index*perPage, (index+1)*perPage)
 		if _, err := chromedp.Run(browser, chromedp.Evaluate[chromedp.Void](script)); err != nil {
 			return err
 		}
