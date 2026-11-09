@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -133,6 +134,10 @@ func ParseList(s Source, b []byte, pageURL string) ([]Candidate, string, error) 
 // ParseDates only borrows year/month from earlier dates in the same field.
 // It never uses publication dates or the current year to fill missing years.
 func ParseDates(text string) []event.DateRange {
+	return parseDates(text, 0)
+}
+
+func parseDates(text string, year int) []event.DateRange {
 	for _, marker := range []string{"（注）", "(注)", "※"} {
 		if i := strings.Index(text, marker); i >= 0 {
 			text = text[:i]
@@ -145,7 +150,7 @@ func ParseDates(text string) []event.DateRange {
 	text = strings.NewReplacer("年", "-", "月", "-", "日", "", ".", "-", "/", "-", "（", "(", "）", ")").Replace(text)
 	re := regexp.MustCompile(`(?:(\d{4})-)?(?:(\d{1,2})-)?(\d{1,2})(?:\([^)]*\))?`)
 	idx := re.FindAllStringSubmatchIndex(text, -1)
-	year, month := 0, 0
+	month := 0
 	var out []event.DateRange
 	prevEnd := 0
 	for _, m := range idx {
@@ -202,6 +207,56 @@ func ParseDates(text string) []event.DateRange {
 		prevEnd = m[1]
 	}
 	return out
+}
+
+// parseDetailDates borrows a title year only when the specific date field fits
+// inside an explicitly dated title occurrence, and that year is unambiguous.
+func parseDetailDates(text, title string) []event.DateRange {
+	if dates := ParseDates(text); len(dates) > 0 {
+		return dates
+	}
+	anchors := ParseDates(title)
+	years := map[int]bool{}
+	for _, d := range anchors {
+		for _, date := range []string{d.Start, d.End} {
+			if t, err := time.Parse("2006-01-02", date); err == nil {
+				years[t.Year()] = true
+			}
+		}
+	}
+	var result []event.DateRange
+	for year := range years {
+		dates := parseDates(text, year)
+		if len(dates) == 0 {
+			continue
+		}
+		contained := true
+		for _, d := range dates {
+			end := d.End
+			if end == "" {
+				end = d.Start
+			}
+			found := false
+			for _, anchor := range anchors {
+				anchorEnd := anchor.End
+				if anchorEnd == "" {
+					anchorEnd = anchor.Start
+				}
+				if d.Start >= anchor.Start && end <= anchorEnd {
+					found = true
+					break
+				}
+			}
+			contained = contained && found
+		}
+		if contained {
+			if result != nil && !slices.Equal(result, dates) {
+				return nil
+			}
+			result = dates
+		}
+	}
+	return result
 }
 func textLines(sel *goquery.Selection) []string {
 	copy := sel.Clone()
@@ -362,7 +417,14 @@ func ParseDetail(s Source, c Candidate, b []byte, now time.Time) (event.Event, e
 	if e.DateText == "" {
 		e.DateText = e.Title
 	}
-	e.Dates = ParseDates(e.DateText)
+	e.Dates = parseDetailDates(e.DateText, e.Title)
+	if s.ID == "park" {
+		published := clean(d.Find(".news-detail__item .news-list__date").First().Text())
+		if dates := ParseDates(published); len(dates) == 1 {
+			day, _ := time.Parse("2006-01-02", dates[0].Start)
+			estimateEventYear(&e, day)
+		}
+	}
 	if strings.Contains(e.DateText, "除く") || strings.Contains(e.DateText, "休館") {
 		e.NeedsReview = append(e.NeedsReview, "開催期間内の休館・除外日は出典の注記を確認してください")
 	}
