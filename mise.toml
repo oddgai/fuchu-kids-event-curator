@@ -1,5 +1,6 @@
 [tools]
 go = "1.27.3"
+gitleaks = "8.30.1"
 
 [env]
 GOTOOLCHAIN = "local"
@@ -7,6 +8,14 @@ GOTOOLCHAIN = "local"
 [tasks.fmt]
 description = "Goコードを整形する"
 run = "go fmt ./..."
+
+[tasks.secrets]
+description = "Gitの全履歴から秘密情報を検査する"
+run = 'gitleaks git --redact --no-banner --log-opts="--all" .'
+
+[tasks."secrets:staged"]
+description = "ステージ済みの変更から秘密情報を検査する"
+run = "gitleaks git --redact --no-banner --pre-commit --staged ."
 
 [tasks.check]
 description = "整形・静的解析・テスト・ビルドを確認する"

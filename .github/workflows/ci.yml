@@ -9,6 +9,20 @@ permissions:
   contents: read
 
 jobs:
+  secrets:
+    name: Gitleaks
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@v2
+        with:
+          install_args: gitleaks
+      - name: 全Git履歴の秘密情報を検査
+        run: mise run secrets
+
   check:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
